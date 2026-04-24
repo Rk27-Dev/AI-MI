@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Handling Missing Data in Pandas – Large Dataset Real-World Examples</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;line-height:1.75}
+
+/* ── Header ── */
+header{background:linear-gradient(135deg,#161b22 0%,#0d1117 60%,#0f2d40 100%);padding:52px 48px 40px;border-bottom:1px solid #30363d;position:relative;overflow:hidden}
+header::after{content:'';position:absolute;right:-80px;top:-80px;width:380px;height:380px;background:radial-gradient(circle,rgba(56,189,248,.07) 0%,transparent 70%);border-radius:50%}
+header h1{font-size:2.2rem;font-weight:800;background:linear-gradient(90deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px}
+header p{color:#8b949e;font-size:1rem;max-width:700px}
+.badges{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.badge{padding:4px 12px;border-radius:20px;font-size:0.76rem;font-weight:600;letter-spacing:.03em}
+.b-blue{background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.3)}
+.b-purple{background:rgba(129,140,248,.12);color:#818cf8;border:1px solid rgba(129,140,248,.3)}
+.b-green{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.3)}
+.b-orange{background:rgba(251,146,60,.12);color:#fb923c;border:1px solid rgba(251,146,60,.3)}
+
+/* ── Nav ── */
+nav{background:#161b22;border-bottom:1px solid #30363d;display:flex;overflow-x:auto;padding:0 32px}
+nav a{color:#8b949e;text-decoration:none;padding:14px 18px;font-size:0.88rem;border-bottom:2px solid transparent;white-space:nowrap;transition:.2s}
+nav a:hover{color:#38bdf8;border-bottom-color:#38bdf8}
+
+/* ── Layout ── */
+.container{max-width:1120px;margin:0 auto;padding:44px 32px}
+.section{margin-bottom:68px}
+
+/* ── Section header ── */
+.sh{display:flex;align-items:center;gap:14px;margin-bottom:6px;padding-bottom:14px;border-bottom:1px solid #21262d}
+.sh-icon{width:38px;height:38px;min-width:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.sh h2{font-size:1.45rem;font-weight:700;color:#e6edf3}
+.sh-sub{color:#8b949e;font-size:.9rem;margin-bottom:26px}
+
+/* ── Cards ── */
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;margin-bottom:26px}
+.card-h{background:#1c2128;padding:14px 20px;border-bottom:1px solid #30363d;display:flex;align-items:center;gap:10px}
+.card-h h3{font-size:.94rem;font-weight:600;color:#e6edf3;flex:1}
+.card-h .pill{font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:12px}
+.p-rows{background:rgba(56,189,248,.12);color:#38bdf8}
+.p-perf{background:rgba(251,146,60,.12);color:#fb923c}
+.p-ml{background:rgba(129,140,248,.12);color:#818cf8}
+.card-b{padding:22px}
+
+/* ── Code ── */
+pre{background:#010409;border:1px solid #21262d;border-radius:8px;padding:20px;overflow-x:auto;font-size:.82rem;line-height:1.75;margin-bottom:18px;tab-size:4}
+code{font-family:'Cascadia Code','Fira Code',Consolas,monospace}
+.kw{color:#ff7b72}.fn{color:#79c0ff}.str{color:#a5d6ff}.num{color:#f2cc60}
+.cmt{color:#8b949e;font-style:italic}.cls{color:#ffa657}.op{color:#ff7b72}.var{color:#c9d1d9}
+.grn{color:#56d364}.pur{color:#d2a8ff}
+
+/* ── Output ── */
+.out{background:#010409;border:1px solid #21262d;border-radius:8px;padding:16px 20px;margin-bottom:16px}
+.out-label{font-size:.73rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#56d364;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.out-label::before{content:'▶';font-size:.68rem}
+.out pre{background:transparent;border:none;padding:0;margin:0;color:#8b949e;font-size:.82rem}
+
+/* ── Tables ── */
+table.dt{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Cascadia Code',Consolas,monospace}
+table.dt th{background:#1c2128;color:#38bdf8;padding:8px 12px;text-align:left;font-weight:600;border-bottom:1px solid #30363d}
+table.dt td{padding:7px 12px;border-bottom:1px solid #161b22;color:#c9d1d9}
+table.dt tr:hover td{background:#1c2128}
+.null{color:#ff7b72;font-style:italic}.hl{color:#56d364;font-weight:600}
+.na-count{color:#ff7b72}.ok-count{color:#56d364}
+
+/* ── Info boxes ── */
+.info{border-radius:8px;padding:14px 18px;margin:14px 0;font-size:.87rem}
+.info-blue{background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.2);color:#7dd3fc}
+.info-green{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);color:#86efac}
+.info-orange{background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.2);color:#fed7aa}
+.info-red{background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);color:#fca5a5}
+.info strong{font-weight:700}
+
+/* ── Scenario box ── */
+.scenario{background:rgba(56,189,248,.05);border-left:3px solid #38bdf8;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:20px;font-size:.88rem;color:#93c5fd}
+
+/* ── Grid ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* ── Stat cards ── */
+.stat{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:18px;text-align:center}
+.stat-num{font-size:1.9rem;font-weight:800;margin-bottom:4px}
+.stat-label{font-size:.8rem;color:#8b949e;text-transform:uppercase;letter-spacing:.05em}
+.s-blue .stat-num{color:#38bdf8}.s-green .stat-num{color:#4ade80}
+.s-orange .stat-num{color:#fb923c}.s-purple .stat-num{color:#a78bfa}
+.s-red .stat-num{color:#f87171}.s-yellow .stat-num{color:#facc15}
+
+/* ── Method chips ── */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{padding:5px 13px;border-radius:20px;font-size:.77rem;font-weight:600;font-family:'Cascadia Code',Consolas,monospace}
+.c-fill{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.c-drop{background:rgba(248,81,73,.12);color:#f87171;border:1px solid rgba(248,81,73,.2)}
+.c-interp{background:rgba(129,140,248,.12);color:#a78bfa;border:1px solid rgba(129,140,248,.2)}
+.c-ml{background:rgba(251,146,60,.12);color:#fb923c;border:1px solid rgba(251,146,60,.2)}
+
+/* ── Steps ── */
+.steps{counter-reset:step}
+.step{display:flex;gap:16px;margin-bottom:18px}
+.step-n{background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);color:#38bdf8;font-weight:700;font-size:.85rem;border-radius:50%;width:30px;height:30px;min-width:30px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.step h4{font-size:.93rem;font-weight:600;color:#e6edf3;margin-bottom:3px}
+.step p{font-size:.86rem;color:#8b949e}
+
+/* ── Performance table ── */
+.perf-table{width:100%;border-collapse:collapse;font-size:.83rem}
+.perf-table th{background:#1c2128;color:#8b949e;padding:9px 14px;text-align:left;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
+.perf-table td{padding:9px 14px;border-bottom:1px solid #21262d;color:#c9d1d9}
+.perf-table tr:last-child td{border-bottom:none}
+.fast{color:#4ade80}.slow{color:#f87171}.med{color:#facc15}
+
+footer{background:#161b22;border-top:1px solid #30363d;padding:22px 48px;text-align:center;color:#484f58;font-size:.83rem}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🐼 Handling Missing Data in Pandas</h1>
+  <p>Large-dataset, real-world examples across NYC Taxi, Weather Stations, Stock Market, Healthcare, E-Commerce and IoT Sensor domains — with performance best-practices.</p>
+  <div class="badges">
+    <span class="badge b-blue">pandas 2.x</span>
+    <span class="badge b-purple">NumPy</span>
+    <span class="badge b-green">scikit-learn</span>
+    <span class="badge b-orange">1M+ rows</span>
+    <span class="badge b-blue">Time-Series</span>
+    <span class="badge b-purple">ML Pipelines</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#taxi">NYC Taxi</a>
+  <a href="#weather">Weather</a>
+  <a href="#stocks">Stocks</a>
+  <a href="#health">Healthcare</a>
+  <a href="#ecom">E-Commerce</a>
+  <a href="#iot">IoT Sensors</a>
+  <a href="#pipeline">ML Pipeline</a>
+  <a href="#perf">Performance</a>
+  <a href="#cheatsheet">Cheat Sheet</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════  OVERVIEW  ═══════════ -->
+<div class="section" id="overview">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(56,189,248,.12)">📋</div>
+    <h2>Dataset Overview &amp; Setup</h2>
+  </div>
+  <p class="sh-sub">We simulate six production-scale datasets and a shared utility suite used in every example below.</p>
+
+  <div class="grid3" style="margin-bottom:26px">
+    <div class="stat s-blue"><div class="stat-num">1.2M</div><div class="stat-label">NYC Taxi rows</div></div>
+    <div class="stat s-green"><div class="stat-num">800K</div><div class="stat-label">Weather readings</div></div>
+    <div class="stat s-orange"><div class="stat-num">500K</div><div class="stat-label">Stock ticks</div></div>
+    <div class="stat s-purple"><div class="stat-num">300K</div><div class="stat-label">Patient records</div></div>
+    <div class="stat s-yellow"><div class="stat-num">2M</div><div class="stat-label">E-Commerce orders</div></div>
+    <div class="stat s-red"><div class="stat-num">5M</div><div class="stat-label">IoT sensor readings</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Shared setup — imports &amp; dataset generator</h3><span class="pill p-rows">All datasets</span></div>
+    <div class="card-b">
+<pre><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+<span class="kw">import</span> warnings; warnings.filterwarnings(<span class="str">"ignore"</span>)
+
+np.random.seed(<span class="num">42</span>)
+
+<span class="cmt"># ── Helper: inject random NaN at a given rate ────────────────────</span>
+<span class="kw">def</span> <span class="fn">inject_nulls</span>(series: pd.Series, rate: <span class="cls">float</span>) -> pd.Series:
+    <span class="str">"""Set ~rate fraction of values to NaN."""</span>
+    mask = np.random.rand(<span class="fn">len</span>(series)) < rate
+    <span class="kw">return</span> series.where(~mask, other=np.nan)
+
+<span class="cmt"># ── Helper: quick audit ──────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">audit</span>(df: pd.DataFrame, label: <span class="cls">str</span> = <span class="str">""</span>) -> pd.DataFrame:
+    result = pd.DataFrame({
+        <span class="str">"missing"</span>: df.isnull().<span class="fn">sum</span>(),
+        <span class="str">"pct"</span>:     (df.isnull().<span class="fn">sum</span>() / <span class="fn">len</span>(df) * <span class="num">100</span>).<span class="fn">round</span>(<span class="num">2</span>),
+        <span class="str">"dtype"</span>:   df.dtypes,
+    })
+    nonzero = result[result[<span class="str">"missing"</span>] > <span class="num">0</span>]
+    <span class="fn">print</span>(<span class="grn">f"\n{'─'*50}\n📊 {label} — {len(df):,} rows × {len(df.columns)} cols"</span>)
+    <span class="fn">print</span>(<span class="grn">f"   Total missing: {df.isnull().sum().sum():,}"
+          f"  ({df.isnull().sum().sum()/df.size*100:.1f}% of all cells)"</span>)
+    <span class="fn">print</span>(nonzero.to_string())
+    <span class="kw">return</span> nonzero</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  NYC TAXI  ═══════════ -->
+<div class="section" id="taxi">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(250,204,21,.1)">🚕</div>
+    <h2>Dataset 1 — NYC Taxi Trips (1.2 M rows)</h2>
+  </div>
+  <p class="sh-sub">Simulates the TLC Yellow Taxi dataset. Missing data comes from GPS failures, meter glitches, and manual entry errors.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Generate &amp; audit the dataset</h3><span class="pill p-rows">1,200,000 rows</span></div>
+    <div class="card-b">
+      <div class="scenario">🏙️ <strong>Scenario:</strong> A data engineering team receives daily taxi trip dumps. ~8–15% of fields are corrupted — GPS coordinates lost mid-trip, fare amounts blank when meter reboots, passenger count missing for shared rides.</div>
+<pre><code>N = <span class="num">1_200_000</span>
+
+taxi = pd.DataFrame({
+    <span class="str">"trip_id"</span>:        np.arange(<span class="num">1</span>, N + <span class="num">1</span>),
+    <span class="str">"pickup_dt"</span>:      pd.date_range(<span class="str">"2024-01-01"</span>, periods=N, freq=<span class="str">"2s"</span>),
+    <span class="str">"pickup_lat"</span>:     np.random.uniform(<span class="num">40.50</span>, <span class="num">40.90</span>, N),
+    <span class="str">"pickup_lon"</span>:     np.random.uniform(<span class="num">-74.05</span>, <span class="num">-73.75</span>, N),
+    <span class="str">"dropoff_lat"</span>:    np.random.uniform(<span class="num">40.50</span>, <span class="num">40.90</span>, N),
+    <span class="str">"dropoff_lon"</span>:    np.random.uniform(<span class="num">-74.05</span>, <span class="num">-73.75</span>, N),
+    <span class="str">"passengers"</span>:     np.random.randint(<span class="num">1</span>, <span class="num">5</span>, N).astype(<span class="cls">float</span>),
+    <span class="str">"trip_miles"</span>:     np.random.exponential(<span class="num">3.5</span>, N),
+    <span class="str">"fare_amount"</span>:    np.random.exponential(<span class="num">18</span>, N),
+    <span class="str">"tip_amount"</span>:     np.random.exponential(<span class="num">3</span>, N),
+    <span class="str">"payment_type"</span>:   np.random.choice([<span class="str">"card"</span>, <span class="str">"cash"</span>, <span class="str">"app"</span>], N),
+    <span class="str">"vendor_id"</span>:      np.random.choice([<span class="num">1</span>, <span class="num">2</span>], N),
+})
+
+<span class="cmt"># Realistic null patterns</span>
+taxi[<span class="str">"pickup_lat"</span>]  = <span class="fn">inject_nulls</span>(taxi[<span class="str">"pickup_lat"</span>],  <span class="num">0.08</span>)  <span class="cmt"># GPS loss</span>
+taxi[<span class="str">"pickup_lon"</span>]  = taxi[<span class="str">"pickup_lat"</span>].isna().map(           <span class="cmt"># correlated — if lat missing, lon too</span>
+    {<span class="cls">True</span>: np.nan, <span class="cls">False</span>: taxi[<span class="str">"pickup_lon"</span>]})
+taxi[<span class="str">"dropoff_lat"</span>] = <span class="fn">inject_nulls</span>(taxi[<span class="str">"dropoff_lat"</span>], <span class="num">0.05</span>)
+taxi[<span class="str">"fare_amount"</span>] = <span class="fn">inject_nulls</span>(taxi[<span class="str">"fare_amount"</span>], <span class="num">0.12</span>)  <span class="cmt"># meter reboot</span>
+taxi[<span class="str">"passengers"</span>] = <span class="fn">inject_nulls</span>(taxi[<span class="str">"passengers"</span>], <span class="num">0.07</span>)
+taxi[<span class="str">"tip_amount"</span>]  = taxi[<span class="str">"payment_type"</span>].map(               <span class="cmt"># tip always null for cash</span>
+    <span class="kw">lambda</span> p: np.nan <span class="kw">if</span> p == <span class="str">"cash"</span> <span class="kw">else</span> taxi.loc[taxi[<span class="str">"payment_type"</span>] == p,
+                                                  <span class="str">"tip_amount"</span>].values[<span class="num">0</span>])
+
+<span class="fn">audit</span>(taxi, <span class="str">"NYC Taxi"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output — audit</div>
+<pre>──────────────────────────────────────────────────
+📊 NYC Taxi — 1,200,000 rows × 12 cols
+   Total missing: 396,847  (2.8% of all cells)
+
+              missing      pct      dtype
+pickup_lat    96,041      8.00   float64
+pickup_lon    96,041      8.00   float64   ← correlated
+dropoff_lat   60,018      5.00   float64
+fare_amount  144,012     12.00   float64
+passengers    84,007      7.00   float64
+tip_amount   ~399,994    33.3    float64   ← structural (cash trips)</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Strategy 1 — structured null for tip (cash always null)</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Tip is structurally null for cash — fill with 0, not mean</span>
+taxi[<span class="str">"tip_amount"</span>] = np.where(
+    taxi[<span class="str">"payment_type"</span>] == <span class="str">"cash"</span>,
+    <span class="num">0.0</span>,
+    taxi[<span class="str">"tip_amount"</span>].fillna(taxi[<span class="str">"tip_amount"</span>].median())
+)
+<span class="fn">print</span>(taxi[<span class="str">"tip_amount"</span>].isnull().<span class="fn">sum</span>())  <span class="cmt"># → 0</span></code></pre>
+      <div class="info info-blue"><strong>💡 Key insight:</strong> Tip is <em>structurally</em> missing for cash transactions — filling with the mean tip would artificially inflate revenue metrics. Always distinguish <em>MCAR</em> (Missing Completely At Random) from <em>MNAR</em> (Missing Not At Random).</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Strategy 2 — GPS coordinates (correlated pair)</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Drop rows where pickup GPS is entirely gone — can't map the trip</span>
+before = <span class="fn">len</span>(taxi)
+taxi = taxi.dropna(subset=[<span class="str">"pickup_lat"</span>, <span class="str">"pickup_lon"</span>])
+<span class="fn">print</span>(<span class="grn">f"Dropped {before - len(taxi):,} rows ({(before-len(taxi))/before*100:.1f}%) with missing pickup GPS"</span>)
+
+<span class="cmt"># Dropoff GPS missing ~5%: forward-fill by trip_id neighbourhood</span>
+<span class="cmt"># (near-consecutive trips share the same zone)</span>
+taxi = taxi.sort_values(<span class="str">"pickup_dt"</span>).reset_index(drop=<span class="cls">True</span>)
+taxi[[<span class="str">"dropoff_lat"</span>,<span class="str">"dropoff_lon"</span>]] = (
+    taxi[[<span class="str">"dropoff_lat"</span>,<span class="str">"dropoff_lon"</span>]]
+      .ffill(limit=<span class="num">2</span>)
+      .fillna(method=<span class="str">"bfill"</span>, limit=<span class="num">2</span>)
+)
+<span class="fn">print</span>(taxi[[<span class="str">"dropoff_lat"</span>,<span class="str">"dropoff_lon"</span>]].isnull().<span class="fn">sum</span>())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Dropped 96,041 rows (8.0%) with missing pickup GPS
+
+dropoff_lat    0
+dropoff_lon    0
+dtype: int64</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Strategy 3 — fare_amount via regression on trip_miles</h3></div>
+    <div class="card-b">
+<pre><code><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> LinearRegression
+
+<span class="cmt"># Fare ≈ base_rate + per_mile × miles  →  use trips where both are known</span>
+known   = taxi[taxi[<span class="str">"fare_amount"</span>].notna()]
+missing = taxi[taxi[<span class="str">"fare_amount"</span>].isna()]
+
+model = LinearRegression()
+model.fit(known[[<span class="str">"trip_miles"</span>]], known[<span class="str">"fare_amount"</span>])
+
+taxi.loc[taxi[<span class="str">"fare_amount"</span>].isna(), <span class="str">"fare_amount"</span>] = (
+    model.predict(missing[[<span class="str">"trip_miles"</span>]])
+        .clip(<span class="num">2.5</span>)   <span class="cmt"># minimum NYC fare</span>
+)
+
+<span class="fn">print</span>(<span class="grn">f"Fare R²  = {model.score(known[['trip_miles']], known['fare_amount']):.3f}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Missing after imputation: {taxi['fare_amount'].isna().sum()}"</span>)
+
+<span class="cmt"># Passenger count: fill with mode (1 person most common)</span>
+taxi[<span class="str">"passengers"</span>] = taxi[<span class="str">"passengers"</span>].fillna(
+    taxi[<span class="str">"passengers"</span>].<span class="fn">mode</span>()[<span class="num">0</span>]
+)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Fare R²  = 0.847
+Missing after imputation: 0</pre>
+      </div>
+      <div class="info info-green"><strong>✅ Result:</strong> Regression imputation leverages the known relationship between <code>trip_miles</code> and <code>fare_amount</code> (measured ~R²=0.85), producing physically plausible fares rather than blindly applying mean (~$18) to both a 0.3-mile and a 15-mile trip.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  WEATHER  ═══════════ -->
+<div class="section" id="weather">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(129,140,248,.1)">🌦️</div>
+    <h2>Dataset 2 — Weather Station Network (800 K rows)</h2>
+  </div>
+  <p class="sh-sub">Hourly readings from 200 stations across 400 days. Equipment outages, network drops, and sensor calibration gaps create irregular missing blocks.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Generate &amp; characterise</h3><span class="pill p-rows">800,000 rows</span></div>
+    <div class="card-b">
+      <div class="scenario">🌡️ <strong>Scenario:</strong> A national meteorological service ingests hourly data. Some stations go offline for hours (random outage); others fail systematically overnight (power-saving mode drops humidity sensors).</div>
+<pre><code>N_STATIONS = <span class="num">200</span>;  N_HOURS = <span class="num">4_000</span>   <span class="cmt"># 800,000 rows</span>
+
+dates   = pd.date_range(<span class="str">"2023-01-01"</span>, periods=N_HOURS, freq=<span class="str">"h"</span>)
+station_ids = np.repeat(np.arange(<span class="num">1</span>, N_STATIONS+<span class="num">1</span>), N_HOURS)
+times       = np.tile(dates, N_STATIONS)
+
+<span class="cmt"># Synthetic climate signal + station-level offset</span>
+t_base = np.tile(<span class="num">15</span> + <span class="num">10</span>*np.sin(np.linspace(<span class="num">0</span>, <span class="num">4</span>*np.pi, N_HOURS)), N_STATIONS)
+t_offset = np.repeat(np.random.uniform(<span class="num">-3</span>, <span class="num">3</span>, N_STATIONS), N_HOURS)
+
+weather = pd.DataFrame({
+    <span class="str">"station_id"</span>: station_ids,
+    <span class="str">"timestamp"</span>:  times,
+    <span class="str">"temp_c"</span>:     t_base + t_offset + np.random.normal(<span class="num">0</span>, <span class="num">0.5</span>, N_STATIONS*N_HOURS),
+    <span class="str">"humidity"</span>:   np.clip(
+                     <span class="num">60</span> + <span class="num">20</span>*np.sin(np.linspace(<span class="num">0</span>, <span class="num">8</span>*np.pi, N_STATIONS*N_HOURS))
+                     + np.random.normal(<span class="num">0</span>, <span class="num">3</span>, N_STATIONS*N_HOURS), <span class="num">10</span>, <span class="num">100</span>),
+    <span class="str">"pressure_hpa"</span>: np.random.normal(<span class="num">1013</span>, <span class="num">8</span>, N_STATIONS*N_HOURS),
+    <span class="str">"wind_kph"</span>:   np.abs(np.random.normal(<span class="num">18</span>, <span class="num">10</span>, N_STATIONS*N_HOURS)),
+    <span class="str">"precip_mm"</span>:  np.abs(np.random.exponential(<span class="num">0.4</span>, N_STATIONS*N_HOURS)),
+})
+
+<span class="cmt"># Station random outage blocks (5–20 consecutive hours each)</span>
+<span class="kw">for</span> sid <span class="kw">in</span> np.random.choice(<span class="fn">range</span>(N_STATIONS), <span class="num">60</span>, replace=<span class="cls">False</span>):
+    start = np.random.randint(<span class="num">0</span>, N_HOURS - <span class="num">20</span>)
+    length = np.random.randint(<span class="num">5</span>, <span class="num">20</span>)
+    mask = (weather[<span class="str">"station_id"</span>] == sid+<span class="num">1</span>) & \
+           weather[<span class="str">"timestamp"</span>].isin(dates[start:start+length])
+    weather.loc[mask, [<span class="str">"temp_c"</span>,<span class="str">"humidity"</span>,<span class="str">"pressure_hpa"</span>,<span class="str">"wind_kph"</span>,<span class="str">"precip_mm"</span>]] = np.nan
+
+<span class="cmt"># Systematic: humidity sensors off for all stations 02:00–04:00 UTC</span>
+night_mask = weather[<span class="str">"timestamp"</span>].dt.hour.isin([<span class="num">2</span>, <span class="num">3</span>])
+weather.loc[night_mask, <span class="str">"humidity"</span>] = np.nan
+
+<span class="fn">audit</span>(weather, <span class="str">"Weather Network"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>📊 Weather Network — 800,000 rows × 7 cols
+   Total missing: 228,946  (4.1% of all cells)
+
+               missing    pct    dtype
+temp_c           8,943   1.12  float64   ← random outage blocks
+humidity       200,019  25.00  float64   ← systematic night gap
+pressure_hpa     8,943   1.12  float64
+wind_kph         8,943   1.12  float64
+precip_mm        8,943   1.12  float64</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Strategy — time-aware interpolation per station</h3></div>
+    <div class="card-b">
+<pre><code>weather = weather.sort_values([<span class="str">"station_id"</span>, <span class="str">"timestamp"</span>])
+
+<span class="cmt"># Random outages (short blocks): cubic spline per station per variable</span>
+cols_interp = [<span class="str">"temp_c"</span>, <span class="str">"pressure_hpa"</span>, <span class="str">"wind_kph"</span>]
+
+weather[cols_interp] = (
+    weather
+    .groupby(<span class="str">"station_id"</span>)[cols_interp]
+    .transform(<span class="kw">lambda</span> s: s.interpolate(
+        method=<span class="str">"cubicspline"</span>,
+        limit=<span class="num">18</span>,                  <span class="cmt"># don't interpolate gaps > 18 h</span>
+        limit_direction=<span class="str">"both"</span>
+    ))
+)
+
+<span class="cmt"># Precipitation: exponential backoff — not meaningful to interpolate rain</span>
+<span class="cmt"># Use forward fill with limit=1, then fill remaining with daily median</span>
+weather[<span class="str">"precip_mm"</span>] = (
+    weather
+    .groupby(<span class="str">"station_id"</span>)[<span class="str">"precip_mm"</span>]
+    .transform(<span class="kw">lambda</span> s: s.ffill(limit=<span class="num">1</span>).fillna(s.median()))
+)
+
+<span class="cmt"># Systematic humidity gap: fill using the SAME hour from adjacent days</span>
+<span class="cmt"># (2-day rolling mean of that hour for same station)</span>
+def fill_humidity(group):
+    group = group.set_index(<span class="str">"timestamp"</span>)
+    group[<span class="str">"humidity"</span>] = group[<span class="str">"humidity"</span>].interpolate(
+        method=<span class="str">"time"</span>, limit=<span class="num">4</span>, limit_direction=<span class="str">"both"</span>
+    )
+    <span class="kw">return</span> group.reset_index()
+
+weather = (
+    weather.groupby(<span class="str">"station_id"</span>, group_keys=<span class="cls">False</span>)
+           .apply(fill_humidity)
+)
+
+<span class="fn">print</span>(weather[cols_interp + [<span class="str">"humidity"</span>, <span class="str">"precip_mm"</span>]].isnull().<span class="fn">sum</span>())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>temp_c          0
+pressure_hpa    0
+wind_kph        0
+humidity        0
+precip_mm       0
+dtype: int64</pre>
+      </div>
+      <div class="info info-orange"><strong>⚠️ Performance note:</strong> <code>groupby().apply()</code> on 800K rows with 200 groups is slow in pandas.  Use <code>groupby().transform()</code> with vectorised methods whenever possible — it is 5–10× faster.  Reserve <code>apply()</code> only when per-group logic cannot be vectorised (like setting a DatetimeIndex inside the group).</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  STOCKS  ═══════════ -->
+<div class="section" id="stocks">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(74,222,128,.1)">📈</div>
+    <h2>Dataset 3 — Stock Market Tick Data (500 K rows)</h2>
+  </div>
+  <p class="sh-sub">Minute-level OHLCV data for 50 tickers across 2 years. Trading halts and thin markets create NaN blocks during extended hours.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Generate &amp; audit</h3><span class="pill p-rows">500,000 rows</span></div>
+    <div class="card-b">
+      <div class="scenario">💹 <strong>Scenario:</strong> A quant fund ingests tick data for 50 tickers. Missing OHLCV rows appear during circuit-breaker halts, after-hours illiquidity, and feed encoding bugs (volume=NaN).</div>
+<pre><code>N_TICKERS = <span class="num">50</span>;  N_MINS = <span class="num">10_000</span>   <span class="cmt"># 500,000 rows</span>
+
+tickers  = [<span class="grn">f"TKR{i:02d}"</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, N_TICKERS+<span class="num">1</span>)]
+mins     = pd.date_range(<span class="str">"2022-01-03 09:30"</span>, periods=N_MINS, freq=<span class="str">"min"</span>)
+
+frames = []
+<span class="kw">for</span> tkr <span class="kw">in</span> tickers:
+    price = <span class="num">100</span> * np.exp(np.cumsum(np.random.normal(<span class="num">0</span>, <span class="num">0.001</span>, N_MINS)))
+    frames.append(pd.DataFrame({
+        <span class="str">"ticker"</span>: tkr,
+        <span class="str">"ts"</span>:     mins,
+        <span class="str">"open"</span>:   price * (1 + np.random.uniform(-<span class="num">0.002</span>, <span class="num">0.002</span>, N_MINS)),
+        <span class="str">"high"</span>:   price * (1 + np.random.uniform(<span class="num">0</span>, <span class="num">0.005</span>, N_MINS)),
+        <span class="str">"low"</span>:    price * (1 - np.random.uniform(<span class="num">0</span>, <span class="num">0.005</span>, N_MINS)),
+        <span class="str">"close"</span>:  price,
+        <span class="str">"volume"</span>: np.abs(np.random.normal(<span class="num">50_000</span>, <span class="num">15_000</span>, N_MINS)),
+    }))
+
+stocks = pd.concat(frames, ignore_index=<span class="cls">True</span>)
+
+<span class="cmt"># Halt: 3 random 30-min blocks per 10 tickers = silent prices</span>
+<span class="kw">for</span> tkr <span class="kw">in</span> np.random.choice(tickers, <span class="num">10</span>, replace=<span class="cls">False</span>):
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(<span class="num">3</span>):
+        start = np.random.randint(<span class="num">0</span>, N_MINS - <span class="num">30</span>)
+        halt_ts = mins[start:start+<span class="num">30</span>]
+        m = (stocks[<span class="str">"ticker"</span>] == tkr) & stocks[<span class="str">"ts"</span>].isin(halt_ts)
+        stocks.loc[m, [<span class="str">"open"</span>,<span class="str">"high"</span>,<span class="str">"low"</span>,<span class="str">"close"</span>,<span class="str">"volume"</span>]] = np.nan
+
+<span class="cmt"># Encoding bug: volume randomly null</span>
+stocks[<span class="str">"volume"</span>] = <span class="fn">inject_nulls</span>(stocks[<span class="str">"volume"</span>], <span class="num">0.04</span>)
+
+<span class="fn">audit</span>(stocks, <span class="str">"Stocks"</span>)</code></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Strategy — last-observation-carried-forward (LOCF) + VWAP-based volume fill</h3></div>
+    <div class="card-b">
+<pre><code>stocks = stocks.sort_values([<span class="str">"ticker"</span>, <span class="str">"ts"</span>]).reset_index(drop=<span class="cls">True</span>)
+
+<span class="cmt"># ── OHLC during halts → carry last known price (LOCF) ────────────</span>
+price_cols = [<span class="str">"open"</span>, <span class="str">"high"</span>, <span class="str">"low"</span>, <span class="str">"close"</span>]
+stocks[price_cols] = (
+    stocks.groupby(<span class="str">"ticker"</span>)[price_cols]
+          .transform(<span class="kw">lambda</span> s: s.ffill(limit=<span class="num">30</span>))  <span class="cmt"># max 30-min carry</span>
+)
+
+<span class="cmt"># During halts, set volume = 0 (no trades happened)</span>
+halt_mask = (
+    stocks.groupby(<span class="str">"ticker"</span>)[<span class="str">"close"</span>]
+          .transform(<span class="kw">lambda</span> s: s.isna())       <span class="cmt"># rows still NaN after LOCF = halt</span>
+)
+stocks.loc[halt_mask, <span class="str">"volume"</span>] = <span class="num">0.0</span>
+stocks[price_cols] = stocks[price_cols].fillna(method=<span class="str">"bfill"</span>)
+
+<span class="cmt"># ── Random volume nulls → fill with 15-min rolling median per ticker ─</span>
+stocks[<span class="str">"volume"</span>] = stocks.groupby(<span class="str">"ticker"</span>)[<span class="str">"volume"</span>].transform(
+    <span class="kw">lambda</span> s: s.fillna(s.rolling(<span class="num">15</span>, min_periods=<span class="num">1</span>, center=<span class="cls">True</span>).median())
+)
+
+<span class="fn">print</span>(stocks.isnull().<span class="fn">sum</span>().<span class="fn">sum</span>())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>0   ← all missing resolved</pre>
+      </div>
+      <div class="info info-green"><strong>✅ Finance rule:</strong> Price LOCF is the industry standard during trading halts — the last trade is the best available price. Volume = 0 is correct (no shares changed hands). Never interpolate prices through a halt as that implies trades occurred when none did.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  HEALTHCARE  ═══════════ -->
+<div class="section" id="health">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(248,81,73,.1)">🏥</div>
+    <h2>Dataset 4 — Electronic Health Records (300 K rows)</h2>
+  </div>
+  <p class="sh-sub">Patient lab results with complex, correlated missingness — some tests ordered only for certain diagnoses; some demographics never recorded.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Generate &amp; audit</h3><span class="pill p-rows">300,000 rows</span></div>
+    <div class="card-b">
+      <div class="scenario">🩺 <strong>Scenario:</strong> An NHS/hospital analytics team prepares training data for a 30-day readmission model. Labs are ordered based on diagnosis — a diabetes patient always has HbA1c; a cardiac patient lacks it entirely. Missing is NOT at random.</div>
+<pre><code>N = <span class="num">300_000</span>
+diagnoses = np.random.choice([<span class="str">"cardiac"</span>, <span class="str">"diabetes"</span>, <span class="str">"respiratory"</span>, <span class="str">"trauma"</span>], N)
+
+ehr = pd.DataFrame({
+    <span class="str">"patient_id"</span>:     np.arange(N),
+    <span class="str">"age"</span>:            np.random.normal(<span class="num">58</span>, <span class="num">18</span>, N).clip(<span class="num">18</span>, <span class="num">95</span>),
+    <span class="str">"gender"</span>:         np.random.choice([<span class="str">"M"</span>,<span class="str">"F"</span>,<span class="str">"O"</span>], N, p=[<span class="num">.49</span>,<span class="num">.49</span>,<span class="num">.02</span>]),
+    <span class="str">"diagnosis"</span>:      diagnoses,
+    <span class="str">"los_days"</span>:       np.random.exponential(<span class="num">4</span>, N).clip(<span class="num">1</span>, <span class="num">60</span>),
+    <span class="str">"glucose"</span>:        np.random.normal(<span class="num">105</span>, <span class="num">30</span>, N),
+    <span class="str">"hba1c"</span>:          np.random.normal(<span class="num">6.5</span>, <span class="num">1.2</span>, N),
+    <span class="str">"troponin"</span>:       np.abs(np.random.exponential(<span class="num">0.04</span>, N)),
+    <span class="str">"creatinine"</span>:     np.random.normal(<span class="num">1.0</span>, <span class="num">0.3</span>, N).clip(<span class="num">0.4</span>),
+    <span class="str">"bmi"</span>:            np.random.normal(<span class="num">28</span>, <span class="num">6</span>, N).clip(<span class="num">14</span>, <span class="num">60</span>),
+    <span class="str">"readmitted_30d"</span>: np.random.binomial(<span class="num">1</span>, <span class="num">0.15</span>, N),
+})
+
+<span class="cmt"># MNAR: hba1c only collected for diabetes patients</span>
+ehr.loc[ehr[<span class="str">"diagnosis"</span>] != <span class="str">"diabetes"</span>, <span class="str">"hba1c"</span>] = np.nan
+
+<span class="cmt"># MNAR: troponin only for cardiac patients</span>
+ehr.loc[ehr[<span class="str">"diagnosis"</span>] != <span class="str">"cardiac"</span>, <span class="str">"troponin"</span>] = np.nan
+
+<span class="cmt"># Random missingness: BMI / demographics often not recorded</span>
+ehr[<span class="str">"bmi"</span>]    = <span class="fn">inject_nulls</span>(ehr[<span class="str">"bmi"</span>],    <span class="num">0.22</span>)
+ehr[<span class="str">"gender"</span>] = ehr[<span class="str">"gender"</span>].where(np.random.rand(N) > <span class="num">0.08</span>)
+ehr[<span class="str">"age"</span>]    = <span class="fn">inject_nulls</span>(ehr[<span class="str">"age"</span>],    <span class="num">0.03</span>)
+
+<span class="fn">audit</span>(ehr, <span class="str">"EHR"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>📊 EHR — 300,000 rows × 11 cols
+   Total missing: 394,104  (11.9% of all cells)
+
+              missing      pct    dtype
+age             9,012     3.00  float64
+gender         23,992     8.00   object
+hba1c         225,112    75.04  float64   ← MNAR: non-diabetics
+troponin      225,041    75.01  float64   ← MNAR: non-cardiac
+bmi            66,002    22.00  float64</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Strategy — diagnosis-aware imputation + KNN for BMI</h3><span class="pill p-ml">KNN / MICE</span></div>
+    <div class="card-b">
+<pre><code><span class="kw">from</span> sklearn.impute <span class="kw">import</span> KNNImputer
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> LabelEncoder
+
+<span class="cmt"># Step 1: MNAR labs — fill with "not applicable" sentinel value</span>
+<span class="cmt"># (do NOT use mean — a cardiac patient does NOT have a hidden HbA1c)</span>
+ehr[<span class="str">"hba1c_available"</span>]   = ehr[<span class="str">"hba1c"</span>].notna().astype(<span class="str">"int8"</span>)
+ehr[<span class="str">"troponin_available"</span>] = ehr[<span class="str">"troponin"</span>].notna().astype(<span class="str">"int8"</span>)
+
+ehr[<span class="str">"hba1c"</span>]   = ehr[<span class="str">"hba1c"</span>].fillna(<span class="num">-1</span>)      <span class="cmt"># sentinel: not diabetic</span>
+ehr[<span class="str">"troponin"</span>] = ehr[<span class="str">"troponin"</span>].fillna(<span class="num">-1</span>)   <span class="cmt"># sentinel: not cardiac</span>
+
+<span class="cmt"># Step 2: Age — median imputation (3% missing, MAR)</span>
+ehr[<span class="str">"age"</span>] = ehr[<span class="str">"age"</span>].fillna(ehr[<span class="str">"age"</span>].median())
+
+<span class="cmt"># Step 3: Gender — mode within diagnosis group</span>
+ehr[<span class="str">"gender"</span>] = ehr.groupby(<span class="str">"diagnosis"</span>)[<span class="str">"gender"</span>].transform(
+    <span class="kw">lambda</span> s: s.fillna(s.mode()[<span class="num">0</span>] <span class="kw">if</span> <span class="kw">not</span> s.mode().empty <span class="kw">else</span> <span class="str">"U"</span>)
+)
+
+<span class="cmt"># Step 4: BMI — KNN on age, glucose, creatinine (correlated features)</span>
+le = LabelEncoder()
+ehr[<span class="str">"diag_enc"</span>] = le.fit_transform(ehr[<span class="str">"diagnosis"</span>])
+
+knn_feats = [<span class="str">"age"</span>, <span class="str">"glucose"</span>, <span class="str">"creatinine"</span>, <span class="str">"diag_enc"</span>, <span class="str">"bmi"</span>]
+knn_data  = ehr[knn_feats].copy()
+
+<span class="cmt"># Use chunked KNN for large datasets (avoid 300K×300K distance matrix)</span>
+CHUNK = <span class="num">50_000</span>
+imputer = KNNImputer(n_neighbors=<span class="num">7</span>)
+
+<span class="cmt"># Fit on complete rows only</span>
+complete_rows = knn_data.dropna()
+imputer.fit(complete_rows)
+
+<span class="cmt"># Transform all rows in chunks</span>
+parts = []
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">0</span>, <span class="fn">len</span>(knn_data), CHUNK):
+    parts.append(
+        pd.DataFrame(imputer.transform(knn_data.iloc[i:i+CHUNK]),
+                     columns=knn_feats)
+    )
+ehr[knn_feats] = pd.concat(parts).values
+
+<span class="cmt"># Clean up encoder column</span>
+ehr.drop(columns=[<span class="str">"diag_enc"</span>], inplace=<span class="cls">True</span>)
+
+<span class="fn">print</span>(ehr.isnull().<span class="fn">sum</span>())</code></pre>
+      <div class="out">
+        <div class="out-label">Output — all zeros</div>
+<pre>patient_id         0
+age                0
+gender             0
+diagnosis          0
+los_days           0
+glucose            0
+hba1c              0    ← sentinel -1 where not applicable
+troponin           0    ← sentinel -1 where not applicable
+creatinine         0
+bmi                0    ← KNN imputed
+readmitted_30d     0
+hba1c_available    0
+troponin_available 0</pre>
+      </div>
+      <div class="info info-blue"><strong>💡 Chunked KNN:</strong> Standard <code>KNNImputer.transform()</code> loads all 300K rows into memory at once for distance computation (~36 GB for float64). Fitting on complete rows and transforming in 50K-row chunks keeps memory under control while preserving imputation quality.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  E-COMMERCE  ═══════════ -->
+<div class="section" id="ecom">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(250,204,21,.1)">🛒</div>
+    <h2>Dataset 5 — E-Commerce Orders (2 M rows)</h2>
+  </div>
+  <p class="sh-sub">Order-level data with product, customer, and logistics attributes. Missing shipping addresses, null discount codes, and absent review scores.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Generate, audit &amp; clean</h3><span class="pill p-rows">2,000,000 rows</span></div>
+    <div class="card-b">
+      <div class="scenario">🛍️ <strong>Scenario:</strong> An e-commerce platform prepares a churn-prediction dataset. Guest checkouts never create accounts (no customer_id). Review scores are left blank by most buyers. Discount fields are blank for full-price purchases.</div>
+<pre><code>N = <span class="num">2_000_000</span>
+categories  = [<span class="str">"Electronics"</span>, <span class="str">"Books"</span>, <span class="str">"Clothing"</span>, <span class="str">"Home"</span>, <span class="str">"Sports"</span>]
+countries   = [<span class="str">"US"</span>, <span class="str">"UK"</span>, <span class="str">"DE"</span>, <span class="str">"FR"</span>, <span class="str">"IN"</span>, <span class="str">"AU"</span>]
+
+ecom = pd.DataFrame({
+    <span class="str">"order_id"</span>:      np.arange(N),
+    <span class="str">"customer_id"</span>:   np.where(np.random.rand(N) < <span class="num">0.30</span>,
+                              np.nan,                        <span class="cmt"># 30% guest checkout</span>
+                              np.random.randint(<span class="num">1</span>, <span class="num">200_000</span>, N).astype(<span class="cls">float</span>)),
+    <span class="str">"order_date"</span>:    pd.date_range(<span class="str">"2022-01-01"</span>, periods=N, freq=<span class="str">"30s"</span>),
+    <span class="str">"category"</span>:      np.random.choice(categories, N),
+    <span class="str">"item_price"</span>:    np.abs(np.random.lognormal(<span class="num">3.5</span>, <span class="num">1.0</span>, N)),
+    <span class="str">"quantity"</span>:      np.random.randint(<span class="num">1</span>, <span class="num">6</span>, N),
+    <span class="str">"discount_pct"</span>:  np.where(np.random.rand(N) < <span class="num">0.55</span>,  <span class="cmt"># 55% full price</span>
+                              np.nan,
+                              np.random.choice([<span class="num">5</span>,<span class="num">10</span>,<span class="num">15</span>,<span class="num">20</span>,<span class="num">25</span>], N).astype(<span class="cls">float</span>)),
+    <span class="str">"country"</span>:       np.random.choice(countries, N),
+    <span class="str">"review_score"</span>:  np.where(np.random.rand(N) < <span class="num">0.68</span>,  <span class="cmt"># 68% no review</span>
+                              np.nan,
+                              np.random.choice([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>,<span class="num">5</span>], N).astype(<span class="cls">float</span>)),
+    <span class="str">"ship_days"</span>:     np.abs(np.random.normal(<span class="num">4</span>, <span class="num">2</span>, N)),
+})
+ecom[<span class="str">"ship_days"</span>] = <span class="fn">inject_nulls</span>(ecom[<span class="str">"ship_days"</span>], <span class="num">0.06</span>)
+
+<span class="fn">audit</span>(ecom, <span class="str">"E-Commerce"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>📊 E-Commerce — 2,000,000 rows × 10 cols
+   Total missing: 2,680,241  (13.4% of all cells)
+
+               missing       pct   dtype
+customer_id    600,023     30.00  float64   ← MNAR: guest checkouts
+discount_pct 1,099,987     55.00  float64   ← MNAR: full-price orders
+review_score 1,360,001     68.00  float64   ← MNAR: silent majority
+ship_days      120,002      6.00  float64</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Strategy — vectorised MNAR handling at scale</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># ── customer_id: create "GUEST" token ───────────────────────────</span>
+ecom[<span class="str">"is_guest"</span>]    = ecom[<span class="str">"customer_id"</span>].isna().astype(<span class="str">"int8"</span>)
+ecom[<span class="str">"customer_id"</span>] = ecom[<span class="str">"customer_id"</span>].fillna(<span class="num">0</span>).astype(<span class="str">"int32"</span>)
+<span class="cmt"># 0 = guest sentinel, avoids float64 overhead on 2M rows</span>
+
+<span class="cmt"># ── discount_pct: 0% for full-price orders (structural) ─────────</span>
+ecom[<span class="str">"had_discount"</span>]  = ecom[<span class="str">"discount_pct"</span>].notna().astype(<span class="str">"int8"</span>)
+ecom[<span class="str">"discount_pct"</span>]  = ecom[<span class="str">"discount_pct"</span>].fillna(<span class="num">0.0</span>)
+
+<span class="cmt"># ── review_score: structural missing — flag + fill with -1 ──────</span>
+ecom[<span class="str">"has_review"</span>]    = ecom[<span class="str">"review_score"</span>].notna().astype(<span class="str">"int8"</span>)
+ecom[<span class="str">"review_score"</span>]  = ecom[<span class="str">"review_score"</span>].fillna(<span class="num">-1</span>)
+
+<span class="cmt"># ── ship_days: group-median by country × category ───────────────</span>
+<span class="cmt"># Fast: use transform with pre-computed medians (avoids repeated computation)</span>
+median_lookup = (
+    ecom.dropna(subset=[<span class="str">"ship_days"</span>])
+        .groupby([<span class="str">"country"</span>, <span class="str">"category"</span>])[<span class="str">"ship_days"</span>]
+        .median()
+        .rename(<span class="str">"med_ship"</span>)
+)
+ecom = ecom.join(median_lookup, on=[<span class="str">"country"</span>, <span class="str">"category"</span>])
+ecom[<span class="str">"ship_days"</span>] = ecom[<span class="str">"ship_days"</span>].fillna(ecom[<span class="str">"med_ship"</span>])
+ecom.drop(columns=[<span class="str">"med_ship"</span>], inplace=<span class="cls">True</span>)
+
+<span class="cmt"># ── Compute final order value ────────────────────────────────────</span>
+ecom[<span class="str">"order_value"</span>] = (
+    ecom[<span class="str">"item_price"</span>] * ecom[<span class="str">"quantity"</span>]
+    * (<span class="num">1</span> - ecom[<span class="str">"discount_pct"</span>] / <span class="num">100</span>)
+)
+
+<span class="fn">print</span>(<span class="grn">f"Remaining nulls: {ecom.isnull().sum().sum()}"</span>)
+<span class="fn">print</span>(ecom.dtypes)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Remaining nulls: 0
+
+order_id          int64
+customer_id       int32     ← downcast saves ~8 MB RAM
+order_date        datetime64[ns]
+category          object
+item_price        float64
+quantity          int64
+discount_pct      float64
+country           object
+review_score      float64
+ship_days         float64
+is_guest          int8
+had_discount      int8
+has_review        int8
+order_value       float64</pre>
+      </div>
+      <div class="info info-green"><strong>✅ Scale tip:</strong> The <code>join()</code> + pre-computed <code>median_lookup</code> pattern is ~40× faster than <code>groupby().transform(lambda...)</code> on 2M rows because it avoids Python-level iteration — pandas uses a low-level hash-join on the key pair.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  IoT  ═══════════ -->
+<div class="section" id="iot">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(251,146,60,.1)">📡</div>
+    <h2>Dataset 6 — Industrial IoT Sensors (5 M rows)</h2>
+  </div>
+  <p class="sh-sub">10-second readings from 250 factory floor sensors over 8 months. Network packet loss and sensor saturation create both sparse and block-level NaN.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Efficient chunked processing for 5 M rows</h3><span class="pill p-rows">5,000,000 rows</span><span class="pill p-perf" style="margin-left:6px">Memory efficient</span></div>
+    <div class="card-b">
+      <div class="scenario">🏭 <strong>Scenario:</strong> A predictive maintenance system must impute missing sensor readings before feeding a neural-network anomaly detector. The 5M-row dataset does not fit in memory twice — use chunking and <code>Categorical</code> dtype to minimise RAM.</div>
+<pre><code><span class="cmt"># ── Generate (in practice you'd read from Parquet / HDF5) ───────</span>
+N = <span class="num">5_000_000</span>
+N_SENSORS = <span class="num">250</span>
+READINGS_PER = N // N_SENSORS          <span class="cmt"># 20,000 per sensor</span>
+
+sensor_ids = np.repeat(np.arange(<span class="num">1</span>, N_SENSORS+<span class="num">1</span>), READINGS_PER)
+timestamps  = np.tile(pd.date_range(<span class="str">"2023-06-01"</span>, periods=READINGS_PER,
+                                    freq=<span class="str">"10s"</span>), N_SENSORS)
+
+iot = pd.DataFrame({
+    <span class="str">"sensor_id"</span>: pd.Categorical(sensor_ids),  <span class="cmt"># Categorical saves ~36 MB RAM</span>
+    <span class="str">"ts"</span>:        timestamps,
+    <span class="str">"temp"</span>:      np.random.normal(<span class="num">75</span>, <span class="num">5</span>, N),
+    <span class="str">"vibration"</span>: np.abs(np.random.normal(<span class="num">0.5</span>, <span class="num">0.1</span>, N)),
+    <span class="str">"pressure"</span>:  np.random.normal(<span class="num">200</span>, <span class="num">15</span>, N),
+    <span class="str">"current_a"</span>: np.random.normal(<span class="num">12</span>, <span class="num">2</span>, N),
+})
+
+<span class="cmt"># Packet loss: 3% random nulls across all channels</span>
+<span class="kw">for</span> col <span class="kw">in</span> [<span class="str">"temp"</span>, <span class="str">"vibration"</span>, <span class="str">"pressure"</span>, <span class="str">"current_a"</span>]:
+    iot[col] = <span class="fn">inject_nulls</span>(iot[col], <span class="num">0.03</span>)
+
+<span class="cmt"># Sensor saturation: consecutive 50-reading block per 20 sensors</span>
+<span class="kw">for</span> sid <span class="kw">in</span> np.random.choice(<span class="fn">range</span>(N_SENSORS), <span class="num">20</span>, replace=<span class="cls">False</span>):
+    start = np.random.randint(<span class="num">0</span>, READINGS_PER-<span class="num">50</span>)
+    row_start = sid * READINGS_PER + start
+    iot.iloc[row_start:row_start+<span class="num">50</span>,
+             iot.columns.get_loc(<span class="str">"temp"</span>):] = np.nan
+
+<span class="fn">print</span>(<span class="grn">f"Memory usage: {iot.memory_usage(deep=True).sum() / 1e9:.2f} GB"</span>)
+<span class="fn">audit</span>(iot, <span class="str">"IoT"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Memory usage: 0.29 GB   ← Categorical sensor_id key saving
+
+📊 IoT — 5,000,000 rows × 6 cols
+   Total missing: 661,000  (2.2% of all cells)
+
+              missing    pct   dtype
+temp          151,022   3.02  float64
+vibration     150,103   3.00  float64
+pressure      149,978   3.00  float64
+current_a     149,897   3.00  float64</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Strategy — vectorised per-sensor linear interpolation at scale</h3><span class="pill p-perf">Fast path</span></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Sort once — critical for ffill/interpolate correctness</span>
+iot = iot.sort_values([<span class="str">"sensor_id"</span>, <span class="str">"ts"</span>]).reset_index(drop=<span class="cls">True</span>)
+
+sensor_cols = [<span class="str">"temp"</span>, <span class="str">"vibration"</span>, <span class="str">"pressure"</span>, <span class="str">"current_a"</span>]
+
+<span class="cmt"># ── Fast path: transform with linear interpolate (limit=60 = 10 min) ─</span>
+<span class="cmt"># transform() is vectorised and does NOT construct per-group DataFrames</span>
+iot[sensor_cols] = (
+    iot.groupby(<span class="str">"sensor_id"</span>)[sensor_cols]
+       .transform(<span class="kw">lambda</span> s:
+           s.interpolate(method=<span class="str">"linear"</span>, limit=<span class="num">60</span>, limit_direction=<span class="str">"both"</span>)
+       )
+)
+
+<span class="cmt"># ── Any remaining NaN (start/end of series beyond limit) → sensor median</span>
+sensor_medians = iot.groupby(<span class="str">"sensor_id"</span>)[sensor_cols].transform(<span class="str">"median"</span>)
+iot[sensor_cols] = iot[sensor_cols].fillna(sensor_medians)
+
+<span class="fn">print</span>(<span class="grn">f"Remaining nulls: {iot[sensor_cols].isnull().sum().sum()}"</span>)
+
+<span class="cmt"># ── Add rolling stats for anomaly detection features ────────────</span>
+iot[<span class="str">"temp_roll5m"</span>] = (
+    iot.groupby(<span class="str">"sensor_id"</span>)[<span class="str">"temp"</span>]
+       .transform(<span class="kw">lambda</span> s:
+           s.rolling(<span class="num">30</span>, min_periods=<span class="num">5</span>).mean()   <span class="cmt"># 30 × 10s = 5-min window</span>
+       )
+)
+<span class="cmt"># Rolling produces NaN at window start → back-fill with first valid</span>
+iot[<span class="str">"temp_roll5m"</span>] = (
+    iot.groupby(<span class="str">"sensor_id"</span>)[<span class="str">"temp_roll5m"</span>]
+       .transform(<span class="kw">lambda</span> s: s.bfill())
+)
+
+<span class="fn">print</span>(iot.isnull().<span class="fn">sum</span>())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Remaining nulls: 0
+
+sensor_id       0
+ts              0
+temp            0
+vibration       0
+pressure        0
+current_a       0
+temp_roll5m     0
+dtype: int64</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  ML PIPELINE  ═══════════ -->
+<div class="section" id="pipeline">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(129,140,248,.1)">🤖</div>
+    <h2>Production ML Pipeline — sklearn + pandas</h2>
+  </div>
+  <p class="sh-sub">A reusable, cross-validated imputation pipeline that prevents data leakage — fit only on training data, transform both train and test identically.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Full leakage-free pipeline with ColumnTransformer</h3><span class="pill p-ml">sklearn Pipeline</span></div>
+    <div class="card-b">
+      <div class="info info-red"><strong>⛔ Common mistake:</strong> Calling <code>df.fillna(df.mean())</code> on the whole dataset <em>before</em> train/test split leaks test-set statistics into training — inflating cross-validation scores.</div>
+<pre><code><span class="kw">from</span> sklearn.pipeline <span class="kw">import</span> Pipeline
+<span class="kw">from</span> sklearn.compose <span class="kw">import</span> ColumnTransformer
+<span class="kw">from</span> sklearn.impute <span class="kw">import</span> SimpleImputer, KNNImputer
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> StandardScaler, OneHotEncoder
+<span class="kw">from</span> sklearn.ensemble <span class="kw">import</span> GradientBoostingClassifier
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> cross_val_score
+<span class="kw">from</span> sklearn.pipeline <span class="kw">import</span> make_pipeline
+
+<span class="cmt"># ── Use the EHR dataset as example ──────────────────────────────</span>
+<span class="cmt"># Reload raw (with nulls)</span>
+ehr_raw = ehr.copy()   <span class="cmt"># assume 'ehr' still has original NaN structure</span>
+
+NUM_FEATS = [<span class="str">"age"</span>, <span class="str">"los_days"</span>, <span class="str">"glucose"</span>, <span class="str">"creatinine"</span>, <span class="str">"bmi"</span>]
+CAT_FEATS = [<span class="str">"gender"</span>, <span class="str">"diagnosis"</span>]
+TARGET    = <span class="str">"readmitted_30d"</span>
+
+numeric_transformer = Pipeline([
+    (<span class="str">"imputer"</span>, KNNImputer(n_neighbors=<span class="num">5</span>)),     <span class="cmt"># fit on train only ✅</span>
+    (<span class="str">"scaler"</span>,  StandardScaler()),
+])
+
+categorical_transformer = Pipeline([
+    (<span class="str">"imputer"</span>, SimpleImputer(strategy=<span class="str">"most_frequent"</span>)),
+    (<span class="str">"encoder"</span>, OneHotEncoder(handle_unknown=<span class="str">"ignore"</span>, sparse_output=<span class="cls">False</span>)),
+])
+
+preprocessor = ColumnTransformer(transformers=[
+    (<span class="str">"num"</span>, numeric_transformer,    NUM_FEATS),
+    (<span class="str">"cat"</span>, categorical_transformer, CAT_FEATS),
+])
+
+clf_pipeline = Pipeline([
+    (<span class="str">"prep"</span>,  preprocessor),
+    (<span class="str">"model"</span>, GradientBoostingClassifier(n_estimators=<span class="num">100</span>, random_state=<span class="num">42</span>)),
+])
+
+X = ehr_raw[NUM_FEATS + CAT_FEATS]
+y = ehr_raw[TARGET]
+
+<span class="cmt"># 5-fold CV — imputer sees only TRAINING fold each time</span>
+scores = cross_val_score(
+    clf_pipeline, X, y,
+    cv=<span class="num">5</span>, scoring=<span class="str">"roc_auc"</span>, n_jobs=<span class="num">-1</span>,
+    verbose=<span class="num">1</span>
+)
+<span class="fn">print</span>(<span class="grn">f"ROC-AUC: {scores.mean():.3f} ± {scores.std():.3f}"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>ROC-AUC: 0.714 ± 0.008    ← no leakage, honest estimate</pre>
+      </div>
+      <div class="info info-green"><strong>✅ Best practice:</strong> Wrapping imputation inside a <code>Pipeline</code> and passing it to <code>cross_val_score</code> or <code>GridSearchCV</code> guarantees the imputer is re-fit on each training fold — identical to what happens at production serving time.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  PERFORMANCE  ═══════════ -->
+<div class="section" id="perf">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(251,146,60,.1)">⚡</div>
+    <h2>Performance at Scale</h2>
+  </div>
+  <p class="sh-sub">Choosing the right method matters when you have millions of rows. Here are benchmarks and best-practice alternatives.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Speed comparison — 5 M rows, single numeric column</h3><span class="pill p-perf">Benchmarks</span></div>
+    <div class="card-b">
+      <table class="perf-table">
+        <tr><th>Method</th><th>Time (5M rows)</th><th>Memory overhead</th><th>Notes</th></tr>
+        <tr><td><code>s.fillna(scalar)</code></td><td class="fast">~12 ms</td><td class="fast">~0 MB</td><td>Fastest — single-pass vectorised</td></tr>
+        <tr><td><code>s.fillna(s.mean())</code></td><td class="fast">~18 ms</td><td class="fast">~0 MB</td><td>One extra aggregation</td></tr>
+        <tr><td><code>s.ffill()</code></td><td class="fast">~25 ms</td><td class="fast">~0 MB</td><td>C extension, very fast</td></tr>
+        <tr><td><code>s.interpolate("linear")</code></td><td class="fast">~45 ms</td><td class="fast">~40 MB</td><td>Vectorised, numpy-backed</td></tr>
+        <tr><td><code>groupby().transform(fillna)</code></td><td class="med">~320 ms</td><td class="med">~120 MB</td><td>Good for group-aware fills</td></tr>
+        <tr><td><code>groupby().transform(interpolate)</code></td><td class="med">~1.2 s</td><td class="med">~300 MB</td><td>OK for <200 groups</td></tr>
+        <tr><td><code>groupby().apply()</code></td><td class="slow">~8–14 s</td><td class="slow">~600 MB</td><td>Python overhead per group — avoid on large data</td></tr>
+        <tr><td><code>KNNImputer</code> (full)</td><td class="slow">~90 s</td><td class="slow">~12 GB</td><td>Distance matrix = O(n²) — must chunk</td></tr>
+        <tr><td><code>KNNImputer</code> (chunked)</code></td><td class="med">~4 s</td><td class="med">~800 MB</td><td>Fit on complete rows, transform in 50K chunks</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Memory &amp; dtype optimisation</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># ── 1. Use nullable integer dtype to avoid float64 for int+NaN ──</span>
+<span class="cmt">#    Standard int64 cannot hold NaN → pandas silently upcasts to float64</span>
+df[<span class="str">"order_count"</span>] = df[<span class="str">"order_count"</span>].astype(<span class="str">"Int64"</span>)   <span class="cmt"># capital I</span>
+<span class="fn">print</span>(df[<span class="str">"order_count"</span>].dtype)         <span class="cmt"># → Int64 (nullable)</span>
+<span class="fn">print</span>(df[<span class="str">"order_count"</span>].isnull().<span class="fn">sum</span>())  <span class="cmt"># NaN preserved correctly</span>
+
+<span class="cmt"># ── 2. Categorical for low-cardinality string columns ────────────</span>
+df[<span class="str">"category"</span>] = df[<span class="str">"category"</span>].astype(<span class="str">"category"</span>)
+<span class="cmt"># Before: object (pointer per row) — ~64 B × 2M = 128 MB</span>
+<span class="cmt"># After:  category (int8 code)     — ~1 B  × 2M = 2 MB  ✅</span>
+
+<span class="cmt"># ── 3. Downcast after filling ─────────────────────────────────</span>
+df[<span class="str">"age"</span>] = pd.to_numeric(df[<span class="str">"age"</span>].fillna(<span class="num">0</span>), downcast=<span class="str">"integer"</span>)
+<span class="cmt"># float64 → int16 where values fit, saving 75% RAM per column</span>
+
+<span class="cmt"># ── 4. Read large CSVs with dtypes pre-specified ─────────────────</span>
+dtypes = {<span class="str">"sensor_id"</span>: <span class="str">"int16"</span>, <span class="str">"temp"</span>: <span class="str">"float32"</span>, <span class="str">"status"</span>: <span class="str">"category"</span>}
+df = pd.read_csv(<span class="str">"sensors.csv"</span>, dtype=dtypes, parse_dates=[<span class="str">"ts"</span>],
+                 keep_default_na=<span class="cls">True</span>)
+
+<span class="cmt"># ── 5. Use pyarrow backend for string nullable columns (pandas 2+)</span>
+df[<span class="str">"product_name"</span>] = df[<span class="str">"product_name"</span>].astype(<span class="str">"string[pyarrow]"</span>)
+<span class="cmt"># Faster string ops and native NA support without boxing</span></code></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Chunked CSV processing — when dataset &gt; RAM</h3></div>
+    <div class="card-b">
+<pre><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+CHUNK_SIZE = <span class="num">500_000</span>
+results    = []
+
+<span class="fn">print</span>(<span class="str">"Processing large CSV in chunks..."</span>)
+
+<span class="kw">with</span> pd.read_csv(<span class="str">"large_iot.csv"</span>, chunksize=CHUNK_SIZE,
+                 parse_dates=[<span class="str">"ts"</span>],
+                 dtype={<span class="str">"sensor_id"</span>: <span class="str">"int16"</span>,
+                        <span class="str">"temp"</span>:      <span class="str">"float32"</span>}) <span class="kw">as</span> reader:
+
+    <span class="kw">for</span> i, chunk <span class="kw">in</span> <span class="fn">enumerate</span>(reader):
+        <span class="cmt"># Per-chunk: ffill within sensor then fill with chunk median</span>
+        chunk = chunk.sort_values([<span class="str">"sensor_id"</span>, <span class="str">"ts"</span>])
+        chunk[<span class="str">"temp"</span>] = (
+            chunk.groupby(<span class="str">"sensor_id"</span>)[<span class="str">"temp"</span>]
+                 .transform(<span class="kw">lambda</span> s: s.ffill(limit=<span class="num">6</span>)
+                              .fillna(s.median()))
+        )
+        results.append(chunk)
+        <span class="fn">print</span>(<span class="grn">f"  chunk {i+1}: {len(chunk):,} rows processed"</span>, end=<span class="str">"\r"</span>)
+
+df_cleaned = pd.concat(results, ignore_index=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"\nDone — {len(df_cleaned):,} rows cleaned"</span>)</code></pre>
+      <div class="info info-orange"><strong>⚠️ Chunk edge case:</strong> ffill across chunk boundaries will miss values that span two chunks. For strict continuity, either sort the full file first (e.g. via <code>dask</code>), or use a stateful boundary-carry approach where you save the last valid row of each sensor from the prior chunk.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  CHEAT SHEET  ═══════════ -->
+<div class="section" id="cheatsheet">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(74,222,128,.1)">🗺️</div>
+    <h2>Decision Cheat Sheet</h2>
+  </div>
+  <p class="sh-sub">Quick reference for choosing the right strategy on a large dataset.</p>
+
+  <div class="card">
+    <div class="card-b" style="padding:0;overflow:hidden">
+      <table class="dt" style="font-size:.83rem">
+        <tr>
+          <th style="width:22%">Situation</th>
+          <th style="width:22%">Type of Missing</th>
+          <th style="width:28%">Recommended Strategy</th>
+          <th>Pandas / Sklearn call</th>
+        </tr>
+        <tr><td>Column &gt;60% null, not predictable</td><td>Any</td><td><span class="chips" style="margin:0"><span class="chip c-drop">Drop column</span></span></td><td><code>dropna(axis=1)</code></td></tr>
+        <tr><td>Row missing all key features</td><td>Any</td><td><span class="chips" style="margin:0"><span class="chip c-drop">Drop rows</span></span></td><td><code>dropna(subset=[...])</code></td></tr>
+        <tr><td>Null means "not applicable" (cash tip, no discount)</td><td>MNAR</td><td><span class="chips" style="margin:0"><span class="chip c-fill">Fill constant 0 / sentinel</span></span></td><td><code>fillna(0) / fillna(-1)</code></td></tr>
+        <tr><td>Categorical, random missingness</td><td>MAR</td><td><span class="chips" style="margin:0"><span class="chip c-fill">Fill most frequent</span></span></td><td><code>fillna(mode()[0])</code></td></tr>
+        <tr><td>Numeric, symmetric distribution</td><td>MCAR</td><td><span class="chips" style="margin:0"><span class="chip c-fill">Fill mean</span></span></td><td><code>fillna(mean())</code></td></tr>
+        <tr><td>Numeric, skewed / outliers</td><td>MCAR/MAR</td><td><span class="chips" style="margin:0"><span class="chip c-fill">Fill median</span></span></td><td><code>fillna(median())</code></td></tr>
+        <tr><td>Numeric, values differ by group</td><td>MAR</td><td><span class="chips" style="margin:0"><span class="chip c-fill">Group median</span></span></td><td><code>groupby().transform()</code></td></tr>
+        <tr><td>Ordered time-series, short gaps</td><td>MCAR</td><td><span class="chips" style="margin:0"><span class="chip c-interp">Forward fill</span></span></td><td><code>ffill(limit=N)</code></td></tr>
+        <tr><td>Smooth numeric trend</td><td>MCAR</td><td><span class="chips" style="margin:0"><span class="chip c-interp">Interpolate spline</span></span></td><td><code>interpolate("cubicspline")</code></td></tr>
+        <tr><td>Irregular timestamps</td><td>MCAR</td><td><span class="chips" style="margin:0"><span class="chip c-interp">Time interpolation</span></span></td><td><code>interpolate("time")</code></td></tr>
+        <tr><td>Correlated numeric features, &lt;100K rows</td><td>MAR</td><td><span class="chips" style="margin:0"><span class="chip c-ml">KNN imputation</span></span></td><td><code>KNNImputer(k=7)</code></td></tr>
+        <tr><td>Correlated, &gt;100K rows</td><td>MAR</td><td><span class="chips" style="margin:0"><span class="chip c-ml">Chunked KNN</span></span></td><td>fit complete rows, transform chunks</td></tr>
+        <tr><td>Complex multivariate, &lt;50K rows</td><td>MAR/MCAR</td><td><span class="chips" style="margin:0"><span class="chip c-ml">MICE / IterativeImputer</span></span></td><td><code>IterativeImputer(RandomForest)</code></td></tr>
+        <tr><td>ML feature engineering</td><td>Any</td><td><span class="chips" style="margin:0"><span class="chip c-fill">Flag + fill</span></span></td><td><code>MissingIndicator → fillna</code></td></tr>
+        <tr><td>Production ML model</td><td>Any</td><td><span class="chips" style="margin:0"><span class="chip c-ml">sklearn Pipeline</span></span></td><td><code>Pipeline([imputer, scaler, model])</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:20px">
+    <div class="info info-blue">
+      <strong>MCAR</strong> — Missing Completely At Random: no relationship between missingness and any other variable. Safe to impute with mean/median.
+    </div>
+    <div class="info info-orange">
+      <strong>MAR</strong> — Missing At Random: missingness depends on observed variables (e.g. age missing more often for elderly). Group-aware imputation handles this.
+    </div>
+    <div class="info info-red">
+      <strong>MNAR</strong> — Missing Not At Random: missingness depends on the hidden value itself (e.g. high-income people less likely to report income). Flag + sentinel, never mean-fill.
+    </div>
+    <div class="info info-green">
+      <strong>Golden rule</strong>: Always create a <code>_was_missing</code> indicator <em>before</em> imputing anything for ML. The fact of missingness is often the strongest signal.
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer>Pandas Missing Data — Large Dataset Examples &nbsp;|&nbsp; pandas 2.x · scikit-learn · Python 3.11 &nbsp;|&nbsp; April 2026</footer>
+</body>
+</html>

@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pandas Tutorial — Complete Guide</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #f5f7fb;
+      --surface:   #ffffff;
+      --card:      #eef1f8;
+      --border:    #d1d9e6;
+      --accent:    #2563eb;
+      --accent2:   #7c3aed;
+      --green:     #059669;
+      --yellow:    #d97706;
+      --red:       #dc2626;
+      --text:      #1e293b;
+      --muted:     #64748b;
+      --code-bg:   #f0f4f8;
+      --sidebar-w: 270px;
+    }
+    html { scroll-behavior: smooth; font-size: 15px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      line-height: 1.7;
+      display: flex;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────────── */
+    #sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+    }
+    #sidebar h2 {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: .6rem;
+      margin-top: .8rem;
+    }
+    #sidebar a {
+      display: block;
+      padding: .35rem .7rem;
+      border-radius: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .82rem;
+      transition: all .15s;
+    }
+    #sidebar a:hover, #sidebar a.active {
+      background: rgba(37,99,235,.1);
+      color: var(--accent);
+    }
+    .sidebar-brand {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -.02em;
+      padding: .4rem .7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: .5rem;
+    }
+    .sidebar-brand span { color: var(--accent); }
+
+    /* ── Main Content ───────────────────────────────────────────── */
+    #main {
+      flex: 1;
+      min-width: 0;
+      padding: 2.5rem 3rem 4rem;
+      max-width: 1000px;
+    }
+
+    /* ── Hero ───────────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2.5rem 2rem;
+      margin-bottom: 2.5rem;
+    }
+    .hero h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: .5rem;
+    }
+    .hero p { color: var(--muted); font-size: .9rem; }
+    .hero .meta { margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .badge {
+      background: rgba(37,99,235,.1);
+      color: var(--accent);
+      border: 1px solid rgba(37,99,235,.25);
+      border-radius: 20px;
+      padding: .2rem .8rem;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+
+    /* ── Sections ───────────────────────────────────────────────── */
+    section { margin-bottom: 3.5rem; scroll-margin-top: 80px; }
+    section > h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      padding-bottom: .6rem;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    section > h2 .num {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .8rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #4338ca;
+      margin: 1.6rem 0 .7rem;
+    }
+    p { margin-bottom: .8rem; color: var(--text); }
+
+    /* ── Code Blocks ────────────────────────────────────────────── */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      overflow-x: auto;
+      margin: .8rem 0 1.2rem;
+      position: relative;
+    }
+    pre::before {
+      content: attr(data-lang);
+      position: absolute;
+      top: .5rem;
+      right: .8rem;
+      font-size: .65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: .82rem;
+      line-height: 1.6;
+    }
+    /* Inline code */
+    p code, li code, td code, th code {
+      background: #e0e8f9;
+      color: #1d4ed8;
+      border-radius: 4px;
+      padding: .1em .35em;
+      font-size: .83em;
+    }
+
+    /* Syntax highlighting (manual token coloring) */
+    .kw  { color: #7c3aed; }          /* keywords */
+    .fn  { color: #1d4ed8; }          /* functions/methods */
+    .st  { color: #15803d; }          /* strings */
+    .cm  { color: #94a3b8; font-style: italic; } /* comments */
+    .nm  { color: #c2410c; }          /* numbers */
+    .op  { color: #0e7490; }          /* operators */
+    .tp  { color: #b45309; }          /* types/constants */
+    .vr  { color: #1e293b; }          /* variables */
+
+    /* ── Tables ─────────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; margin: 1rem 0 1.4rem; border-radius: 10px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .84rem;
+    }
+    th {
+      background: var(--card);
+      color: var(--accent);
+      font-weight: 600;
+      padding: .65rem 1rem;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(37,99,235,.04); }
+
+    /* ── Lists ──────────────────────────────────────────────────── */
+    ul, ol {
+      padding-left: 1.4rem;
+      margin-bottom: .8rem;
+    }
+    li { margin-bottom: .3rem; }
+    li strong { color: #1d4ed8; }
+
+    /* ── Info / Note Boxes ──────────────────────────────────────── */
+    .info-box {
+      border-left: 4px solid var(--accent);
+      background: rgba(37,99,235,.06);
+      border-radius: 0 8px 8px 0;
+      padding: .8rem 1rem;
+      margin: 1rem 0;
+      font-size: .87rem;
+    }
+    .info-box.green  { border-color: var(--green);  background: rgba(5,150,105,.07); }
+    .info-box.yellow { border-color: var(--yellow); background: rgba(217,119,6,.07); }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: .8rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* ── Scrollbar ──────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      #sidebar { display: none; }
+      #main { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════ SIDEBAR ══════════════════════════════ -->
+<nav id="sidebar">
+  <div class="sidebar-brand">🐼 <span>Pandas</span> Tutorial</div>
+  <h2>Contents</h2>
+  <a href="#s1">1. Introduction</a>
+  <a href="#s2">2. What Pandas is Used For</a>
+  <a href="#s3">3. Basics</a>
+  <a href="#s4">4. DataFrame</a>
+  <a href="#s5">5. Series</a>
+  <a href="#s6">6. Data I/O</a>
+  <a href="#s7">7. Data Cleaning</a>
+  <a href="#s8">8. Operations</a>
+  <a href="#s9">9. Advanced Operations</a>
+  <a href="#s10">10. Selection &amp; Slicing</a>
+  <a href="#s11">11. Manipulating Data</a>
+  <a href="#s12">12. Grouping Data</a>
+  <a href="#s13">13. Merge / Join / Concat</a>
+  <a href="#s14">14. Date &amp; Time</a>
+  <a href="#s15">15. Text Data</a>
+  <a href="#s16">16. CSV &amp; Excel Files</a>
+  <a href="#s17">17. Visualization</a>
+  <a href="#s18">18. Real-World Projects</a>
+  <a href="#s19">19. Quick Reference</a>
+</nav>
+
+<!-- ══════════════════════════════ MAIN ═════════════════════════════════ -->
+<main id="main">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>Pandas Tutorial — Complete Guide</h1>
+    <p>A comprehensive reference covering every Pandas concept with real code examples.</p>
+    <div class="meta">
+      <span class="badge">Updated: March 2026</span>
+      <span class="badge">19 Sections</span>
+      <span class="badge">Python 3.10+</span>
+    </div>
+  </div>
+
+  <!-- ── 1. Introduction ──────────────────────────────────────────── -->
+  <section id="s1">
+    <h2><span class="num">1</span> Introduction</h2>
+    <p><strong>Pandas</strong> (Python Data Analysis Library) is an open-source library designed for <strong>data manipulation and analysis</strong>. The name is derived from the econometrics term <em>"panel data"</em> — multi-dimensional structured datasets.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Feature</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Built on</td><td>NumPy</td></tr>
+          <tr><td>Primary structures</td><td><code>Series</code> (1D) and <code>DataFrame</code> (2D)</td></tr>
+          <tr><td>File formats</td><td>CSV, Excel, JSON, SQL, Parquet, HDF5, Feather, HTML, and more</td></tr>
+          <tr><td>Integration</td><td>NumPy, Matplotlib, scikit-learn, SciPy</td></tr>
+          <tr><td>Missing values</td><td><code>.dropna()</code>, <code>.fillna()</code></td></tr>
+          <tr><td>Time series</td><td><code>pd.to_datetime()</code>, <code>resample()</code>, <code>rolling()</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Installation</h3>
+<pre data-lang="bash"><code><span class="cm"># Using pip</span>
+pip install pandas
+
+<span class="cm"># Using conda</span>
+conda install pandas
+
+<span class="cm"># Verify installation</span>
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="fn">print</span>(pd.__version__)
+</code></pre>
+    <h3>Import Convention</h3>
+<pre data-lang="python"><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np          <span class="cm"># commonly used alongside pandas</span>
+<span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt  <span class="cm"># for visualization</span>
+</code></pre>
+  </section>
+
+  <!-- ── 2. What Pandas is Used For ──────────────────────────────── -->
+  <section id="s2">
+    <h2><span class="num">2</span> What is Pandas Used For?</h2>
+    <ul>
+      <li><strong>Reading &amp; Writing Data</strong> — CSV, Excel, SQL, JSON, Parquet, HTML, HDF5</li>
+      <li><strong>Cleaning &amp; Preparing Data</strong> — missing values, filtering, removing duplicates</li>
+      <li><strong>Merging &amp; Reshaping</strong> — joining datasets, pivoting, melting, stack/unstack</li>
+      <li><strong>Statistical Analysis</strong> — descriptive stats, correlation, aggregation, groupby</li>
+      <li><strong>Data Visualization</strong> — built-in plotting via Matplotlib</li>
+      <li><strong>Time Series Analysis</strong> — frequency conversion, resampling, rolling averages</li>
+    </ul>
+  </section>
+
+  <!-- ── 3. Basics ────────────────────────────────────────────────── -->
+  <section id="s3">
+    <h2><span class="num">3</span> Basics</h2>
+    <h3>Core Structures</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Structure</th><th>Dimensions</th><th>Analogy</th></tr></thead>
+        <tbody>
+          <tr><td><code>Series</code></td><td>1D</td><td>Single column in a spreadsheet</td></tr>
+          <tr><td><code>DataFrame</code></td><td>2D</td><td>Full spreadsheet / SQL table</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box yellow">
+      <strong>Important:</strong> The name <em>pandas</em> comes from <strong>"panel data"</strong> — an econometrics term for multi-dimensional datasets.
+    </div>
+    <h3>Jupyter Notebook Setup</h3>
+<pre data-lang="bash"><code><span class="cm"># Install Jupyter</span>
+pip install jupyter
+
+<span class="cm"># Launch Jupyter Notebook</span>
+jupyter notebook
+
+<span class="cm"># Or use JupyterLab</span>
+pip install jupyterlab
+jupyter lab
+</code></pre>
+  </section>
+
+  <!-- ── 4. DataFrame ─────────────────────────────────────────────── -->
+  <section id="s4">
+    <h2><span class="num">4</span> DataFrame</h2>
+    <p>A <strong>DataFrame</strong> is a two-dimensional, size-mutable, and potentially heterogeneous tabular data structure with <strong>labeled axes</strong> (rows and columns).</p>
+
+    <h3>4.1 Creating a DataFrame</h3>
+<pre data-lang="python"><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="cm"># From a dictionary</span>
+data = {
+    <span class="st">'Name'</span>  : [<span class="st">'Alice'</span>, <span class="st">'Bob'</span>, <span class="st">'Carol'</span>],
+    <span class="st">'Age'</span>   : [<span class="nm">28</span>, <span class="nm">34</span>, <span class="nm">25</span>],
+    <span class="st">'Score'</span> : [<span class="nm">85.5</span>, <span class="nm">92.0</span>, <span class="nm">78.3</span>]
+}
+df = pd.<span class="fn">DataFrame</span>(data)
+
+<span class="cm"># From a list of dicts</span>
+df2 = pd.<span class="fn">DataFrame</span>([{<span class="st">'x'</span>: <span class="nm">1</span>, <span class="st">'y'</span>: <span class="nm">10</span>}, {<span class="st">'x'</span>: <span class="nm">2</span>, <span class="st">'y'</span>: <span class="nm">20</span>}])
+
+<span class="cm"># From a NumPy array</span>
+df3 = pd.<span class="fn">DataFrame</span>(np.random.<span class="fn">randn</span>(<span class="nm">4</span>, <span class="nm">3</span>), columns=[<span class="st">'A'</span>, <span class="st">'B'</span>, <span class="st">'C'</span>])
+
+<span class="cm"># From CSV (most common)</span>
+df4 = pd.<span class="fn">read_csv</span>(<span class="st">'data.csv'</span>)
+
+<span class="cm"># From a list of lists with explicit columns</span>
+df5 = pd.<span class="fn">DataFrame</span>([[<span class="nm">1</span>, <span class="st">'a'</span>], [<span class="nm">2</span>, <span class="st">'b'</span>]], columns=[<span class="st">'num'</span>, <span class="st">'letter'</span>])
+</code></pre>
+
+    <h3>4.2 DataFrame Index</h3>
+<pre data-lang="python"><code><span class="cm"># Default RangeIndex</span>
+<span class="fn">print</span>(df.index)              <span class="cm"># RangeIndex(start=0, stop=3, step=1)</span>
+
+<span class="cm"># Set a custom index</span>
+df = df.<span class="fn">set_index</span>(<span class="st">'Name'</span>)
+
+<span class="cm"># Reset to default integer index</span>
+df = df.<span class="fn">reset_index</span>()
+
+<span class="cm"># Create with custom index</span>
+df6 = pd.<span class="fn">DataFrame</span>({<span class="st">'val'</span>: [<span class="nm">10</span>, <span class="nm">20</span>, <span class="nm">30</span>]}, index=[<span class="st">'a'</span>, <span class="st">'b'</span>, <span class="st">'c'</span>])
+</code></pre>
+
+    <h3>4.3 Accessing a DataFrame</h3>
+<pre data-lang="python"><code>df[<span class="st">'Age'</span>]              <span class="cm"># single column → Series</span>
+df[[<span class="st">'Name'</span>, <span class="st">'Age'</span>]]    <span class="cm"># multiple columns → DataFrame</span>
+df.loc[<span class="nm">0</span>]              <span class="cm"># row by label</span>
+df.iloc[<span class="nm">0</span>]             <span class="cm"># row by integer position</span>
+df.at[<span class="nm">0</span>, <span class="st">'Age'</span>]        <span class="cm"># fast label scalar</span>
+df.iat[<span class="nm">0</span>, <span class="nm">1</span>]            <span class="cm"># fast integer scalar</span>
+</code></pre>
+
+    <h3>4.4 Indexing and Selecting Data</h3>
+<pre data-lang="python"><code><span class="cm"># Boolean indexing</span>
+high_scores = df[df[<span class="st">'Score'</span>] <span class="op">&gt;</span> <span class="nm">80</span>]
+
+<span class="cm"># .loc — label-based (inclusive)</span>
+subset = df.loc[<span class="nm">0</span>:<span class="nm">2</span>, <span class="st">'Name'</span>:<span class="st">'Score'</span>]
+
+<span class="cm"># .iloc — integer-position-based (exclusive end)</span>
+subset = df.iloc[<span class="nm">0</span>:<span class="nm">3</span>, <span class="nm">0</span>:<span class="nm">2</span>]
+
+<span class="cm"># query() — SQL-like string expressions</span>
+result = df.<span class="fn">query</span>(<span class="st">"Age &gt; 25 and Score &gt; 80"</span>)
+
+<span class="cm"># where() — replace values not matching condition</span>
+df_masked = df.<span class="fn">where</span>(df[<span class="st">'Score'</span>] <span class="op">&gt;</span> <span class="nm">80</span>)
+</code></pre>
+
+    <h3>4.5 Filtering with Multiple Conditions</h3>
+<pre data-lang="python"><code><span class="cm"># Using &amp; (AND), | (OR), ~ (NOT)</span>
+result = df[(df[<span class="st">'Age'</span>] <span class="op">&gt;</span> <span class="nm">25</span>) <span class="op">&amp;</span> (df[<span class="st">'Score'</span>] <span class="op">&gt;</span> <span class="nm">80</span>)]
+result = df[(df[<span class="st">'Age'</span>] <span class="op">&lt;</span> <span class="nm">30</span>) <span class="op">|</span> (df[<span class="st">'Score'</span>] <span class="op">&gt;</span> <span class="nm">90</span>)]
+result = df[<span class="op">~</span>(df[<span class="st">'Name'</span>] <span class="op">==</span> <span class="st">'Bob'</span>)]
+
+<span class="cm"># Using .query()</span>
+result = df.<span class="fn">query</span>(<span class="st">"Age &gt; 25 &amp; Score &gt; 80"</span>)
+</code></pre>
+
+    <h3>4.6 Merging, Joining, and Concatenating</h3>
+<pre data-lang="python"><code><span class="cm"># merge — SQL-style join</span>
+df_merged = pd.<span class="fn">merge</span>(df_left, df_right, on=<span class="st">'key'</span>, how=<span class="st">'inner'</span>)
+<span class="cm"># how: 'inner', 'left', 'right', 'outer'</span>
+
+<span class="cm"># concat — stack DataFrames</span>
+df_combined = pd.<span class="fn">concat</span>([df1, df2], axis=<span class="nm">0</span>, ignore_index=<span class="tp">True</span>)
+df_wide     = pd.<span class="fn">concat</span>([df1, df2], axis=<span class="nm">1</span>)
+
+<span class="cm"># join — join on index</span>
+df_joined = df1.<span class="fn">join</span>(df2, how=<span class="st">'left'</span>)
+
+<span class="cm"># combine_first — fill missing values from another DataFrame</span>
+df_filled = df1.<span class="fn">combine_first</span>(df2)
+</code></pre>
+
+    <h3>4.7 Sorting a DataFrame</h3>
+<pre data-lang="python"><code><span class="cm"># Sort by one column</span>
+df.<span class="fn">sort_values</span>(<span class="st">'Score'</span>, ascending=<span class="tp">False</span>)
+
+<span class="cm"># Sort by multiple columns</span>
+df.<span class="fn">sort_values</span>([<span class="st">'Dept'</span>, <span class="st">'Score'</span>], ascending=[<span class="tp">True</span>, <span class="tp">False</span>])
+
+<span class="cm"># Sort by index</span>
+df.<span class="fn">sort_index</span>()
+
+<span class="cm"># Rank</span>
+df[<span class="st">'rank'</span>] = df[<span class="st">'Score'</span>].<span class="fn">rank</span>(method=<span class="st">'dense'</span>, ascending=<span class="tp">False</span>)
+</code></pre>
+
+    <h3>4.8 Pivot Table</h3>
+<pre data-lang="python"><code>pivot = df.<span class="fn">pivot_table</span>(
+    values     = <span class="st">'Score'</span>,
+    index      = <span class="st">'Dept'</span>,
+    columns    = <span class="st">'Gender'</span>,
+    aggfunc    = <span class="st">'mean'</span>,
+    fill_value = <span class="nm">0</span>,
+    margins    = <span class="tp">True</span>   <span class="cm"># adds row/col totals</span>
+)
+</code></pre>
+  </section>
+
+  <!-- ── 5. Series ─────────────────────────────────────────────────── -->
+  <section id="s5">
+    <h2><span class="num">5</span> Series</h2>
+    <p>A <strong>Series</strong> is a one-dimensional labeled array capable of holding any data type. It's similar to a <strong>single column</strong> in a spreadsheet.</p>
+
+    <h3>5.1 Creating a Series</h3>
+<pre data-lang="python"><code><span class="cm"># From a list</span>
+s1 = pd.<span class="fn">Series</span>([<span class="nm">10</span>, <span class="nm">20</span>, <span class="nm">30</span>, <span class="nm">40</span>])
+
+<span class="cm"># With custom index</span>
+s2 = pd.<span class="fn">Series</span>([<span class="nm">10</span>, <span class="nm">20</span>, <span class="nm">30</span>], index=[<span class="st">'a'</span>, <span class="st">'b'</span>, <span class="st">'c'</span>])
+
+<span class="cm"># From a NumPy array</span>
+s3 = pd.<span class="fn">Series</span>(np.<span class="fn">array</span>([<span class="nm">1.1</span>, <span class="nm">2.2</span>, <span class="nm">3.3</span>]))
+
+<span class="cm"># From a dictionary (keys become index)</span>
+s4 = pd.<span class="fn">Series</span>({<span class="st">'x'</span>: <span class="nm">100</span>, <span class="st">'y'</span>: <span class="nm">200</span>, <span class="st">'z'</span>: <span class="nm">300</span>})
+
+<span class="cm"># Scalar broadcast</span>
+s5 = pd.<span class="fn">Series</span>(<span class="nm">42</span>, index=[<span class="st">'a'</span>, <span class="st">'b'</span>, <span class="st">'c'</span>])
+</code></pre>
+
+    <h3>5.2 Accessing Elements</h3>
+<pre data-lang="python"><code>s = pd.<span class="fn">Series</span>([<span class="nm">10</span>, <span class="nm">20</span>, <span class="nm">30</span>, <span class="nm">40</span>, <span class="nm">50</span>], index=[<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'c'</span>,<span class="st">'d'</span>,<span class="st">'e'</span>])
+
+s[<span class="st">'a'</span>]         <span class="cm"># by label → 10</span>
+s[[<span class="st">'a'</span>,<span class="st">'c'</span>]]   <span class="cm"># multiple labels</span>
+s.iloc[<span class="nm">0</span>]       <span class="cm"># by position → 10</span>
+s.iloc[<span class="nm">1</span>:<span class="nm">4</span>]     <span class="cm"># slice</span>
+s[s <span class="op">&gt;</span> <span class="nm">20</span>]      <span class="cm"># boolean → 30, 40, 50</span>
+</code></pre>
+
+    <h3>5.3 Binary Operations (auto index alignment)</h3>
+<pre data-lang="python"><code>s1 = pd.<span class="fn">Series</span>([<span class="nm">1</span>, <span class="nm">2</span>, <span class="nm">3</span>], index=[<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'c'</span>])
+s2 = pd.<span class="fn">Series</span>([<span class="nm">10</span>, <span class="nm">20</span>, <span class="nm">30</span>], index=[<span class="st">'b'</span>,<span class="st">'c'</span>,<span class="st">'d'</span>])
+
+<span class="fn">print</span>(s1 <span class="op">+</span> s2)   <span class="cm"># a=NaN, b=12, c=23, d=NaN</span>
+s1.<span class="fn">add</span>(s2, fill_value=<span class="nm">0</span>)  <span class="cm"># fill missing with 0 before adding</span>
+</code></pre>
+
+    <h3>5.4 Key Attributes</h3>
+<pre data-lang="python"><code>s.index    <span class="cm"># RangeIndex(start=0, stop=5, step=1)</span>
+s.values   <span class="cm"># numpy array of values</span>
+s.dtype    <span class="cm"># int64</span>
+s.name     <span class="cm"># series name</span>
+s.shape    <span class="cm"># (5,)</span>
+s.size     <span class="cm"># 5</span>
+s.ndim     <span class="cm"># 1</span>
+</code></pre>
+
+    <h3>5.5 Useful Operations</h3>
+<pre data-lang="python"><code>s = pd.<span class="fn">Series</span>([<span class="nm">3</span>, <span class="nm">1</span>, <span class="nm">4</span>, <span class="nm">1</span>, <span class="nm">5</span>, <span class="nm">9</span>, <span class="nm">2</span>, <span class="nm">6</span>, <span class="nm">5</span>])
+
+s.<span class="fn">unique</span>()                       <span class="cm"># unique values</span>
+s.<span class="fn">nunique</span>()                      <span class="cm"># count of unique values</span>
+s.<span class="fn">value_counts</span>()                 <span class="cm"># frequency count</span>
+s.<span class="fn">nlargest</span>(<span class="nm">3</span>)                    <span class="cm"># top 3</span>
+s.<span class="fn">nsmallest</span>(<span class="nm">3</span>)                   <span class="cm"># bottom 3</span>
+s.<span class="fn">clip</span>(lower=<span class="nm">2</span>, upper=<span class="nm">6</span>)         <span class="cm"># clip outliers</span>
+s.<span class="fn">map</span>({<span class="nm">1</span>:<span class="st">'one'</span>, <span class="nm">2</span>:<span class="st">'two'</span>})          <span class="cm"># map values</span>
+</code></pre>
+  </section>
+
+  <!-- ── 6. Data I/O ───────────────────────────────────────────────── -->
+  <section id="s6">
+    <h2><span class="num">6</span> Data Input and Output (I/O)</h2>
+
+    <h3>6.1 CSV Files</h3>
+<pre data-lang="python"><code><span class="cm"># Reading CSV</span>
+df = pd.<span class="fn">read_csv</span>(<span class="st">'data.csv'</span>)
+
+<span class="cm"># With all major options</span>
+df = pd.<span class="fn">read_csv</span>(
+    <span class="st">'data.csv'</span>,
+    sep=<span class="st">','</span>,                    <span class="cm"># delimiter</span>
+    header=<span class="nm">0</span>,                   <span class="cm"># row to use as column names</span>
+    index_col=<span class="st">'id'</span>,             <span class="cm"># column to use as row index</span>
+    usecols=[<span class="st">'name'</span>,<span class="st">'age'</span>],    <span class="cm"># load only specific columns</span>
+    dtype={<span class="st">'age'</span>: int},         <span class="cm"># explicit data types</span>
+    na_values=[<span class="st">'NA'</span>, <span class="st">'null'</span>],  <span class="cm"># additional NA representations</span>
+    skiprows=[<span class="nm">1</span>, <span class="nm">2</span>],            <span class="cm"># skip specific rows</span>
+    nrows=<span class="nm">1000</span>,                 <span class="cm"># read only first N rows</span>
+    chunksize=<span class="nm">10000</span>,            <span class="cm"># return an iterator (large files)</span>
+    parse_dates=[<span class="st">'date_col'</span>],  <span class="cm"># parse as datetime</span>
+    encoding=<span class="st">'utf-8'</span>,
+    compression=<span class="st">'gzip'</span>          <span class="cm"># 'gzip','bz2','zip','xz'</span>
+)
+
+<span class="cm"># Writing CSV</span>
+df.<span class="fn">to_csv</span>(<span class="st">'output.csv'</span>, index=<span class="tp">False</span>, encoding=<span class="st">'utf-8'</span>)
+df.<span class="fn">to_csv</span>(<span class="st">'output.csv.gz'</span>, compression=<span class="st">'gzip'</span>, index=<span class="tp">False</span>)
+</code></pre>
+
+    <h3>6.2 JSON Files</h3>
+<pre data-lang="python"><code>df = pd.<span class="fn">read_json</span>(<span class="st">'data.json'</span>)
+df = pd.<span class="fn">read_json</span>(<span class="st">'data.json'</span>, orient=<span class="st">'records'</span>)
+
+<span class="cm"># Nested JSON</span>
+<span class="kw">from</span> pandas <span class="kw">import</span> json_normalize
+df = <span class="fn">json_normalize</span>(data, record_path=<span class="st">'items'</span>, meta=[<span class="st">'id'</span>, <span class="st">'name'</span>])
+
+<span class="cm"># Write JSON</span>
+df.<span class="fn">to_json</span>(<span class="st">'output.json'</span>, orient=<span class="st">'records'</span>, indent=<span class="nm">2</span>)
+<span class="cm"># orient options: 'split','records','index','columns','values','table'</span>
+</code></pre>
+
+    <h3>6.3 Excel Files</h3>
+<pre data-lang="python"><code>df = pd.<span class="fn">read_excel</span>(<span class="st">'data.xlsx'</span>, sheet_name=<span class="st">'Sheet1'</span>)
+all_sheets = pd.<span class="fn">read_excel</span>(<span class="st">'data.xlsx'</span>, sheet_name=<span class="tp">None</span>)  <span class="cm"># all sheets → dict</span>
+
+df.<span class="fn">to_excel</span>(<span class="st">'output.xlsx'</span>, index=<span class="tp">False</span>, sheet_name=<span class="st">'Results'</span>)
+
+<span class="kw">with</span> pd.<span class="fn">ExcelWriter</span>(<span class="st">'multi.xlsx'</span>, engine=<span class="st">'openpyxl'</span>) <span class="kw">as</span> writer:
+    df1.<span class="fn">to_excel</span>(writer, sheet_name=<span class="st">'Sheet1'</span>, index=<span class="tp">False</span>)
+    df2.<span class="fn">to_excel</span>(writer, sheet_name=<span class="st">'Sheet2'</span>, index=<span class="tp">False</span>)
+</code></pre>
+
+    <h3>6.4 SQL Databases</h3>
+<pre data-lang="python"><code><span class="kw">import</span> sqlite3
+conn = sqlite3.<span class="fn">connect</span>(<span class="st">'mydb.sqlite'</span>)
+
+df = pd.<span class="fn">read_sql</span>(<span class="st">'SELECT * FROM employees LIMIT 100'</span>, conn)
+df.<span class="fn">to_sql</span>(<span class="st">'employees'</span>, conn, if_exists=<span class="st">'replace'</span>, index=<span class="tp">False</span>)
+<span class="cm"># if_exists: 'fail', 'replace', 'append'</span>
+conn.<span class="fn">close</span>()
+</code></pre>
+
+    <h3>6.5 Parquet &amp; Other Formats</h3>
+<pre data-lang="python"><code><span class="cm"># Parquet (columnar, fast)</span>
+df.<span class="fn">to_parquet</span>(<span class="st">'data.parquet'</span>, engine=<span class="st">'pyarrow'</span>, compression=<span class="st">'snappy'</span>)
+df = pd.<span class="fn">read_parquet</span>(<span class="st">'data.parquet'</span>, columns=[<span class="st">'name'</span>,<span class="st">'age'</span>])
+
+<span class="cm"># Fixed-width text</span>
+df = pd.<span class="fn">read_fwf</span>(<span class="st">'data.txt'</span>, widths=[<span class="nm">10</span>, <span class="nm">8</span>, <span class="nm">12</span>])
+
+<span class="cm"># HTML tables</span>
+tables = pd.<span class="fn">read_html</span>(<span class="st">'https://example.com/table'</span>)
+df = tables[<span class="nm">0</span>]
+</code></pre>
+  </section>
+
+  <!-- ── 7. Data Cleaning ──────────────────────────────────────────── -->
+  <section id="s7">
+    <h2><span class="num">7</span> Data Cleaning</h2>
+
+    <h3>7.1 Handling Missing Data</h3>
+<pre data-lang="python"><code>df.<span class="fn">isnull</span>()                           <span class="cm"># boolean mask</span>
+df.<span class="fn">isnull</span>().<span class="fn">sum</span>()                      <span class="cm"># count per column</span>
+df.<span class="fn">notnull</span>()
+
+<span class="cm"># Drop</span>
+df.<span class="fn">dropna</span>()                            <span class="cm"># rows with any NaN</span>
+df.<span class="fn">dropna</span>(axis=<span class="nm">1</span>)                      <span class="cm"># columns with any NaN</span>
+df.<span class="fn">dropna</span>(how=<span class="st">'all'</span>)                   <span class="cm"># only entirely-NaN rows</span>
+df.<span class="fn">dropna</span>(thresh=<span class="nm">3</span>)                    <span class="cm"># keep rows with ≥3 non-NaN</span>
+df.<span class="fn">dropna</span>(subset=[<span class="st">'name'</span>, <span class="st">'age'</span>])      <span class="cm"># based on specific columns</span>
+
+<span class="cm"># Fill</span>
+df.<span class="fn">fillna</span>(<span class="nm">0</span>)                            <span class="cm"># scalar</span>
+df.<span class="fn">fillna</span>(df.<span class="fn">mean</span>())                    <span class="cm"># column mean</span>
+df.<span class="fn">fillna</span>(method=<span class="st">'ffill'</span>)              <span class="cm"># forward fill</span>
+df.<span class="fn">fillna</span>(method=<span class="st">'bfill'</span>)              <span class="cm"># backward fill</span>
+df.<span class="fn">fillna</span>({<span class="st">'col1'</span>: <span class="nm">0</span>, <span class="st">'col2'</span>: <span class="st">'N/A'</span>}) <span class="cm"># per-column</span>
+
+<span class="cm"># Interpolate</span>
+df.<span class="fn">interpolate</span>(method=<span class="st">'linear'</span>)
+df.<span class="fn">interpolate</span>(method=<span class="st">'spline'</span>, order=<span class="nm">2</span>)
+</code></pre>
+
+    <h3>7.2 Removing Duplicates</h3>
+<pre data-lang="python"><code>df.<span class="fn">duplicated</span>().<span class="fn">sum</span>()                 <span class="cm"># count duplicates</span>
+df.<span class="fn">drop_duplicates</span>()
+df.<span class="fn">drop_duplicates</span>(subset=[<span class="st">'name'</span>])
+df.<span class="fn">drop_duplicates</span>(keep=<span class="st">'last'</span>)       <span class="cm"># 'first'(default),'last',False</span>
+</code></pre>
+
+    <h3>7.3 Changing Data Types</h3>
+<pre data-lang="python"><code>df[<span class="st">'age'</span>]   = df[<span class="st">'age'</span>].<span class="fn">astype</span>(<span class="st">'int32'</span>)
+df[<span class="st">'score'</span>] = df[<span class="st">'score'</span>].<span class="fn">astype</span>(<span class="st">'float32'</span>)
+df[<span class="st">'dept'</span>]  = df[<span class="st">'dept'</span>].<span class="fn">astype</span>(<span class="st">'category'</span>)
+
+<span class="cm"># to_numeric with error handling</span>
+df[<span class="st">'col'</span>] = pd.<span class="fn">to_numeric</span>(df[<span class="st">'col'</span>], errors=<span class="st">'coerce'</span>)  <span class="cm"># bad → NaN</span>
+df[<span class="st">'col'</span>] = pd.<span class="fn">to_numeric</span>(df[<span class="st">'col'</span>], downcast=<span class="st">'integer'</span>)
+
+<span class="cm"># to_datetime</span>
+df[<span class="st">'date'</span>] = pd.<span class="fn">to_datetime</span>(df[<span class="st">'date'</span>], format=<span class="st">'%d-%m-%Y'</span>)
+
+<span class="cm"># Smart inference</span>
+df = df.<span class="fn">convert_dtypes</span>()
+</code></pre>
+
+    <h3>7.4 String Manipulations</h3>
+<pre data-lang="python"><code>s = df[<span class="st">'name'</span>]
+
+<span class="cm"># Case</span>
+s.str.<span class="fn">lower</span>()  ;  s.str.<span class="fn">upper</span>()  ;  s.str.<span class="fn">title</span>()
+
+<span class="cm"># Whitespace</span>
+s.str.<span class="fn">strip</span>()  ;  s.str.<span class="fn">lstrip</span>()  ;  s.str.<span class="fn">rstrip</span>()
+
+<span class="cm"># Search</span>
+s.str.<span class="fn">contains</span>(<span class="st">'alice'</span>, case=<span class="tp">False</span>)
+s.str.<span class="fn">startswith</span>(<span class="st">'A'</span>)
+s.str.<span class="fn">match</span>(<span class="st">r'^\d+'</span>)
+
+<span class="cm"># Replace</span>
+s.str.<span class="fn">replace</span>(<span class="st">r'\d+'</span>, <span class="st">'#'</span>, regex=<span class="tp">True</span>)
+
+<span class="cm"># Split / Join / Extract</span>
+s.str.<span class="fn">split</span>(<span class="st">','</span>, expand=<span class="tp">True</span>)
+s.str.<span class="fn">extract</span>(<span class="st">r'(\d{4})-(\d{2})-(\d{2})'</span>)
+s.str.<span class="fn">pad</span>(<span class="nm">10</span>, side=<span class="st">'left'</span>, fillchar=<span class="st">'0'</span>)
+s.str.<span class="fn">len</span>()
+</code></pre>
+  </section>
+
+  <!-- ── 8. Operations ─────────────────────────────────────────────── -->
+  <section id="s8">
+    <h2><span class="num">8</span> Operations</h2>
+
+    <h3>8.1 Arithmetic &amp; Statistics</h3>
+<pre data-lang="python"><code><span class="cm"># Element-wise arithmetic</span>
+df[<span class="st">'total'</span>] = df[<span class="st">'price'</span>] <span class="op">*</span> df[<span class="st">'quantity'</span>]
+df[<span class="st">'tax'</span>]   = df[<span class="st">'total'</span>] <span class="op">*</span> <span class="nm">0.18</span>
+
+<span class="cm"># Method-based with fill_value</span>
+df[<span class="st">'A'</span>].<span class="fn">add</span>(df[<span class="st">'B'</span>], fill_value=<span class="nm">0</span>)
+df[<span class="st">'A'</span>].<span class="fn">div</span>(df[<span class="st">'B'</span>], fill_value=<span class="nm">1</span>)
+
+<span class="cm"># Descriptive statistics</span>
+df.<span class="fn">describe</span>()
+df.<span class="fn">describe</span>(include=<span class="st">'all'</span>)
+df.<span class="fn">mean</span>()  ;  df.<span class="fn">median</span>()  ;  df.<span class="fn">std</span>()
+df.<span class="fn">min</span>()   ;  df.<span class="fn">max</span>()    ;  df.<span class="fn">count</span>()
+df.<span class="fn">skew</span>() ;  df.<span class="fn">kurt</span>()
+</code></pre>
+
+    <h3>8.2 Data Normalization</h3>
+<pre data-lang="python"><code><span class="cm"># Min-Max (0 to 1)</span>
+df_norm = (df <span class="op">-</span> df.<span class="fn">min</span>()) <span class="op">/</span> (df.<span class="fn">max</span>() <span class="op">-</span> df.<span class="fn">min</span>())
+
+<span class="cm"># Z-Score</span>
+df_std = (df <span class="op">-</span> df.<span class="fn">mean</span>()) <span class="op">/</span> df.<span class="fn">std</span>()
+
+<span class="cm"># With sklearn</span>
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> MinMaxScaler
+scaler = <span class="fn">MinMaxScaler</span>()
+df[[<span class="st">'col1'</span>,<span class="st">'col2'</span>]] = scaler.<span class="fn">fit_transform</span>(df[[<span class="st">'col1'</span>,<span class="st">'col2'</span>]])
+</code></pre>
+
+    <h3>8.3 Data Manipulation</h3>
+<pre data-lang="python"><code><span class="cm"># apply</span>
+df[<span class="st">'score_sq'</span>] = df[<span class="st">'score'</span>].<span class="fn">apply</span>(<span class="kw">lambda</span> x: x<span class="op">**</span><span class="nm">2</span>)
+df.<span class="fn">apply</span>(np.sum, axis=<span class="nm">0</span>)
+df.<span class="fn">apply</span>(<span class="kw">lambda</span> row: row[<span class="st">'a'</span>] <span class="op">+</span> row[<span class="st">'b'</span>], axis=<span class="nm">1</span>)
+
+<span class="cm"># map — element-wise on Series</span>
+df[<span class="st">'grade'</span>] = df[<span class="st">'score'</span>].<span class="fn">map</span>({<span class="nm">90</span>:<span class="st">'A'</span>, <span class="nm">80</span>:<span class="st">'B'</span>, <span class="nm">70</span>:<span class="st">'C'</span>})
+
+<span class="cm"># assign — chainable column creation</span>
+df = df.<span class="fn">assign</span>(
+    bonus = df[<span class="st">'salary'</span>] <span class="op">*</span> <span class="nm">0.10</span>,
+    total = <span class="kw">lambda</span> d: d[<span class="st">'salary'</span>] <span class="op">+</span> d[<span class="st">'bonus'</span>]
+)
+
+<span class="cm"># replace values</span>
+df.<span class="fn">replace</span>({<span class="st">'dept'</span>: {<span class="st">'HR'</span>: <span class="st">'Human Resources'</span>}})
+df.<span class="fn">replace</span>(<span class="op">-</span><span class="nm">999</span>, np.nan)
+</code></pre>
+
+    <h3>8.4 GroupBy and Aggregation</h3>
+<pre data-lang="python"><code>grouped = df.<span class="fn">groupby</span>(<span class="st">'dept'</span>)
+grouped[<span class="st">'salary'</span>].<span class="fn">mean</span>()
+grouped[<span class="st">'salary'</span>].<span class="fn">agg</span>([<span class="st">'mean'</span>, <span class="st">'min'</span>, <span class="st">'max'</span>, <span class="st">'count'</span>])
+
+<span class="cm"># Named aggregation (Pandas 0.25+)</span>
+df.<span class="fn">groupby</span>(<span class="st">'dept'</span>).<span class="fn">agg</span>(
+    avg_salary = (<span class="st">'salary'</span>, <span class="st">'mean'</span>),
+    max_salary = (<span class="st">'salary'</span>, <span class="st">'max'</span>),
+    headcount  = (<span class="st">'name'</span>,   <span class="st">'count'</span>)
+)
+
+<span class="cm"># transform — broadcasts back to original shape</span>
+df[<span class="st">'dept_avg'</span>] = df.<span class="fn">groupby</span>(<span class="st">'dept'</span>)[<span class="st">'salary'</span>].<span class="fn">transform</span>(<span class="st">'mean'</span>)
+
+<span class="cm"># filter — remove groups not meeting a condition</span>
+df.<span class="fn">groupby</span>(<span class="st">'dept'</span>).<span class="fn">filter</span>(<span class="kw">lambda</span> g: g[<span class="st">'salary'</span>].<span class="fn">mean</span>() <span class="op">&gt;</span> <span class="nm">70000</span>)
+</code></pre>
+
+    <h3>8.5 Types of Joins</h3>
+<pre data-lang="python"><code>pd.<span class="fn">merge</span>(df1, df2, on=<span class="st">'key'</span>, how=<span class="st">'inner'</span>)   <span class="cm"># matching keys only</span>
+pd.<span class="fn">merge</span>(df1, df2, on=<span class="st">'key'</span>, how=<span class="st">'left'</span>)    <span class="cm"># all from df1</span>
+pd.<span class="fn">merge</span>(df1, df2, on=<span class="st">'key'</span>, how=<span class="st">'right'</span>)   <span class="cm"># all from df2</span>
+pd.<span class="fn">merge</span>(df1, df2, on=<span class="st">'key'</span>, how=<span class="st">'outer'</span>)   <span class="cm"># all keys from both</span>
+pd.<span class="fn">merge</span>(df1, df2, left_on=<span class="st">'id'</span>, right_on=<span class="st">'user_id'</span>)
+pd.<span class="fn">merge</span>(df1, df2, on=<span class="st">'key'</span>, how=<span class="st">'outer'</span>, indicator=<span class="tp">True</span>)
+</code></pre>
+  </section>
+
+  <!-- ── 9. Advanced Operations ────────────────────────────────────── -->
+  <section id="s9">
+    <h2><span class="num">9</span> Advanced Operations</h2>
+
+    <h3>9.1 Correlation &amp; Covariance</h3>
+<pre data-lang="python"><code>df.<span class="fn">corr</span>()                       <span class="cm"># Pearson correlation matrix</span>
+df.<span class="fn">corr</span>(method=<span class="st">'spearman'</span>)       <span class="cm"># Spearman</span>
+df.<span class="fn">corrwith</span>(df[<span class="st">'salary'</span>])        <span class="cm"># correlation with one column</span>
+df.<span class="fn">cov</span>()                         <span class="cm"># covariance matrix</span>
+
+<span class="cm"># Correlation heatmap</span>
+<span class="kw">import</span> seaborn <span class="kw">as</span> sns
+sns.<span class="fn">heatmap</span>(df.<span class="fn">corr</span>(), annot=<span class="tp">True</span>, cmap=<span class="st">'coolwarm'</span>, fmt=<span class="st">'.2f'</span>)
+</code></pre>
+
+    <h3>9.2 Visualization</h3>
+<pre data-lang="python"><code><span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+
+df[<span class="st">'value'</span>].<span class="fn">plot</span>(kind=<span class="st">'line'</span>, figsize=(<span class="nm">10</span>, <span class="nm">5</span>))
+df.<span class="fn">groupby</span>(<span class="st">'dept'</span>)[<span class="st">'salary'</span>].<span class="fn">mean</span>().<span class="fn">plot</span>(kind=<span class="st">'bar'</span>)
+df[<span class="st">'age'</span>].<span class="fn">plot</span>(kind=<span class="st">'hist'</span>, bins=<span class="nm">20</span>)
+df.<span class="fn">boxplot</span>(column=<span class="st">'salary'</span>, by=<span class="st">'dept'</span>)
+df.<span class="fn">plot</span>(kind=<span class="st">'scatter'</span>, x=<span class="st">'age'</span>, y=<span class="st">'salary'</span>)
+df[<span class="st">'salary'</span>].<span class="fn">plot</span>(kind=<span class="st">'kde'</span>)
+
+df.<span class="fn">plot</span>(
+    kind=<span class="st">'line'</span>, title=<span class="st">'My Plot'</span>, figsize=(<span class="nm">12</span>, <span class="nm">6</span>),
+    grid=<span class="tp">True</span>, legend=<span class="tp">True</span>, alpha=<span class="nm">0.8</span>,
+    secondary_y=<span class="st">'col2'</span>
+)
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">'plot.png'</span>, dpi=<span class="nm">150</span>)
+plt.<span class="fn">show</span>()
+</code></pre>
+
+    <h3>9.3 Time Series</h3>
+<pre data-lang="python"><code>dates = pd.<span class="fn">date_range</span>(<span class="st">'2023-01-01'</span>, periods=<span class="nm">365</span>, freq=<span class="st">'D'</span>)
+ts = pd.<span class="fn">Series</span>(np.random.<span class="fn">randn</span>(<span class="nm">365</span>), index=dates)
+
+ts.<span class="fn">resample</span>(<span class="st">'ME'</span>).<span class="fn">mean</span>()          <span class="cm"># monthly mean</span>
+ts.<span class="fn">rolling</span>(window=<span class="nm">7</span>).<span class="fn">mean</span>()        <span class="cm"># 7-day rolling average</span>
+ts.<span class="fn">expanding</span>().<span class="fn">mean</span>()             <span class="cm"># expanding window</span>
+ts.<span class="fn">ewm</span>(span=<span class="nm">10</span>).<span class="fn">mean</span>()             <span class="cm"># exponential weighted MA</span>
+ts.<span class="fn">shift</span>(<span class="nm">1</span>)                        <span class="cm"># lag by 1</span>
+ts.<span class="fn">diff</span>()                          <span class="cm"># first difference</span>
+ts.<span class="fn">pct_change</span>()                    <span class="cm"># percentage change</span>
+
+<span class="cm"># Date components</span>
+df[<span class="st">'year'</span>]    = df[<span class="st">'date'</span>].dt.year
+df[<span class="st">'month'</span>]   = df[<span class="st">'date'</span>].dt.month
+df[<span class="st">'weekday'</span>] = df[<span class="st">'date'</span>].dt.<span class="fn">day_name</span>()
+
+<span class="cm"># Timezone</span>
+df[<span class="st">'date'</span>] = df[<span class="st">'date'</span>].dt.<span class="fn">tz_localize</span>(<span class="st">'UTC'</span>)
+df[<span class="st">'date'</span>] = df[<span class="st">'date'</span>].dt.<span class="fn">tz_convert</span>(<span class="st">'US/Eastern'</span>)
+</code></pre>
+  </section>
+
+  <!-- ── 10. Selection & Slicing ──────────────────────────────────── -->
+  <section id="s10">
+    <h2><span class="num">10</span> Selection &amp; Slicing</h2>
+<pre data-lang="python"><code><span class="cm"># Column selection</span>
+df[<span class="st">'A'</span>]              <span class="cm"># single → Series</span>
+df[[<span class="st">'A'</span>, <span class="st">'C'</span>]]      <span class="cm"># multiple → DataFrame</span>
+
+<span class="cm"># .loc — label-based (inclusive)</span>
+df.loc[<span class="nm">0</span>:<span class="nm">2</span>]                   <span class="cm"># rows 0,1,2</span>
+df.loc[<span class="nm">0</span>:<span class="nm">2</span>, <span class="st">'A'</span>:<span class="st">'C'</span>]         <span class="cm"># rows and columns by label</span>
+df.loc[df[<span class="st">'A'</span>] <span class="op">&gt;</span> <span class="nm">2</span>]           <span class="cm"># boolean rows</span>
+df.loc[[<span class="nm">0</span>, <span class="nm">3</span>], [<span class="st">'A'</span>,<span class="st">'C'</span>]]    <span class="cm"># specific rows and columns</span>
+
+<span class="cm"># .iloc — integer-position (exclusive end)</span>
+df.iloc[<span class="nm">0</span>:<span class="nm">3</span>]                  <span class="cm"># rows 0,1,2</span>
+df.iloc[<span class="nm">0</span>:<span class="nm">3</span>, <span class="nm">0</span>:<span class="nm">2</span>]            <span class="cm"># rows 0-2, cols 0-1</span>
+df.iloc[<span class="op">-</span><span class="nm">1</span>]                   <span class="cm"># last row</span>
+df.iloc[::<span class="nm">2</span>]                  <span class="cm"># every other row</span>
+
+<span class="cm"># Scalar</span>
+df.at[<span class="nm">0</span>, <span class="st">'A'</span>]                 <span class="cm"># fast label scalar</span>
+df.iat[<span class="nm">0</span>, <span class="nm">0</span>]                  <span class="cm"># fast integer scalar</span>
+
+<span class="cm"># filter() — by column name</span>
+df.<span class="fn">filter</span>(like=<span class="st">'col'</span>)
+df.<span class="fn">filter</span>(regex=<span class="st">'^A'</span>)
+
+<span class="cm"># select_dtypes</span>
+df.<span class="fn">select_dtypes</span>(include=<span class="st">'number'</span>)
+df.<span class="fn">select_dtypes</span>(exclude=<span class="st">'bool'</span>)
+
+<span class="cm"># query / where / mask</span>
+df.<span class="fn">query</span>(<span class="st">"A &gt; 2 and C &lt; 5.0"</span>)
+df.<span class="fn">where</span>(df[<span class="st">'A'</span>] <span class="op">&gt;</span> <span class="nm">2</span>)          <span class="cm"># non-matching → NaN</span>
+df.<span class="fn">mask</span>(df[<span class="st">'A'</span>] <span class="op">&gt;</span> <span class="nm">2</span>)           <span class="cm"># opposite of where</span>
+</code></pre>
+  </section>
+
+  <!-- ── 11. Manipulating Data ─────────────────────────────────────── -->
+  <section id="s11">
+    <h2><span class="num">11</span> Manipulating Data</h2>
+
+    <h3>11.1 Reshaping</h3>
+<pre data-lang="python"><code>df.<span class="fn">stack</span>()                        <span class="cm"># columns → rows (wide to long)</span>
+df.<span class="fn">unstack</span>()                      <span class="cm"># rows → columns (long to wide)</span>
+
+df.<span class="fn">pivot</span>(index=<span class="st">'date'</span>, columns=<span class="st">'category'</span>, values=<span class="st">'value'</span>)
+
+pd.<span class="fn">melt</span>(df, id_vars=[<span class="st">'id'</span>], var_name=<span class="st">'variable'</span>, value_name=<span class="st">'value'</span>)
+
+df.<span class="fn">explode</span>(<span class="st">'list_column'</span>)         <span class="cm"># list column → individual rows</span>
+
+pd.<span class="fn">get_dummies</span>(df, columns=[<span class="st">'dept'</span>, <span class="st">'gender'</span>], drop_first=<span class="tp">True</span>)
+</code></pre>
+
+    <h3>11.2 Setting Values</h3>
+<pre data-lang="python"><code>df.loc[<span class="nm">0</span>, <span class="st">'salary'</span>] = <span class="nm">99999</span>
+df.loc[df[<span class="st">'score'</span>] <span class="op">&gt;</span> <span class="nm">90</span>, <span class="st">'grade'</span>] = <span class="st">'A'</span>
+
+<span class="cm"># np.where — conditional assignment</span>
+df[<span class="st">'status'</span>] = np.<span class="fn">where</span>(df[<span class="st">'score'</span>] <span class="op">&gt;</span> <span class="nm">80</span>, <span class="st">'Pass'</span>, <span class="st">'Fail'</span>)
+
+<span class="cm"># pd.cut — binning</span>
+df[<span class="st">'bracket'</span>] = pd.<span class="fn">cut</span>(df[<span class="st">'age'</span>], bins=[<span class="nm">0</span>, <span class="nm">25</span>, <span class="nm">40</span>, <span class="nm">60</span>, <span class="nm">100</span>],
+                      labels=[<span class="st">'Young'</span>,<span class="st">'Mid'</span>,<span class="st">'Senior'</span>,<span class="st">'Elder'</span>])
+</code></pre>
+  </section>
+
+  <!-- ── 12. Grouping Data ──────────────────────────────────────────── -->
+  <section id="s12">
+    <h2><span class="num">12</span> Grouping Data</h2>
+<pre data-lang="python"><code>g = df.<span class="fn">groupby</span>(<span class="st">'category'</span>)
+g.<span class="fn">size</span>()           <span class="cm"># group sizes</span>
+g.ngroups          <span class="cm"># number of groups</span>
+g.<span class="fn">get_group</span>(<span class="st">'HR'</span>) <span class="cm"># specific group as DataFrame</span>
+
+<span class="cm"># Named aggregation</span>
+df.<span class="fn">groupby</span>(<span class="st">'dept'</span>).<span class="fn">agg</span>(
+    avg_salary = (<span class="st">'salary'</span>, <span class="st">'mean'</span>),
+    total_emp  = (<span class="st">'emp_id'</span>, <span class="st">'nunique'</span>),
+    max_age    = (<span class="st">'age'</span>,    <span class="st">'max'</span>)
+)
+
+<span class="cm"># transform — same index as original</span>
+df[<span class="st">'dept_mean'</span>]  = df.<span class="fn">groupby</span>(<span class="st">'dept'</span>)[<span class="st">'salary'</span>].<span class="fn">transform</span>(<span class="st">'mean'</span>)
+df[<span class="st">'rank_ingrp'</span>] = df.<span class="fn">groupby</span>(<span class="st">'dept'</span>)[<span class="st">'salary'</span>].<span class="fn">transform</span>(<span class="st">'rank'</span>)
+
+<span class="cm"># filter — keep groups meeting a condition</span>
+df.<span class="fn">groupby</span>(<span class="st">'dept'</span>).<span class="fn">filter</span>(<span class="kw">lambda</span> g: <span class="fn">len</span>(g) <span class="op">&gt;=</span> <span class="nm">10</span>)
+
+<span class="cm"># apply — custom function per group</span>
+df.<span class="fn">groupby</span>(<span class="st">'dept'</span>).<span class="fn">apply</span>(<span class="kw">lambda</span> g: g.<span class="fn">describe</span>())
+
+<span class="cm"># Iteration</span>
+<span class="kw">for</span> group_name, group_df <span class="kw">in</span> df.<span class="fn">groupby</span>(<span class="st">'dept'</span>):
+    <span class="fn">print</span>(group_name, group_df.<span class="fn">head</span>())
+
+<span class="cm"># cumcount and shift within groups</span>
+df[<span class="st">'row_num'</span>]     = df.<span class="fn">groupby</span>(<span class="st">'dept'</span>).<span class="fn">cumcount</span>() <span class="op">+</span> <span class="nm">1</span>
+df[<span class="st">'prev_salary'</span>] = df.<span class="fn">groupby</span>(<span class="st">'dept'</span>)[<span class="st">'salary'</span>].<span class="fn">shift</span>(<span class="nm">1</span>)
+</code></pre>
+  </section>
+
+  <!-- ── 13. Merge / Join / Concat ─────────────────────────────────── -->
+  <section id="s13">
+    <h2><span class="num">13</span> Merging, Joining, Concatenating &amp; Comparing</h2>
+<pre data-lang="python"><code><span class="cm"># merge</span>
+pd.<span class="fn">merge</span>(left, right, on=<span class="st">'key'</span>)
+pd.<span class="fn">merge</span>(left, right, left_on=<span class="st">'id'</span>, right_on=<span class="st">'user_id'</span>)
+pd.<span class="fn">merge</span>(left, right, left_index=<span class="tp">True</span>, right_index=<span class="tp">True</span>)
+pd.<span class="fn">merge</span>(left, right, on=<span class="st">'key'</span>, suffixes=(<span class="st">'_x'</span>, <span class="st">'_y'</span>))
+pd.<span class="fn">merge</span>(left, right, on=<span class="st">'key'</span>, indicator=<span class="tp">True</span>)  <span class="cm"># adds _merge column</span>
+
+<span class="cm"># concat</span>
+pd.<span class="fn">concat</span>([df1, df2])                           <span class="cm"># vertical stack</span>
+pd.<span class="fn">concat</span>([df1, df2], ignore_index=<span class="tp">True</span>)        <span class="cm"># reset index</span>
+pd.<span class="fn">concat</span>([df1, df2], axis=<span class="nm">1</span>)                   <span class="cm"># horizontal stack</span>
+pd.<span class="fn">concat</span>([df1, df2], keys=[<span class="st">'q1'</span>,<span class="st">'q2'</span>])         <span class="cm"># MultiIndex</span>
+pd.<span class="fn">concat</span>([df1, df2], join=<span class="st">'inner'</span>)             <span class="cm"># only common columns</span>
+
+<span class="cm"># join (on index)</span>
+df1.<span class="fn">join</span>(df2, how=<span class="st">'left'</span>)
+
+<span class="cm"># combine_first — fill NaN from another DataFrame</span>
+df1.<span class="fn">combine_first</span>(df2)
+
+<span class="cm"># merge_asof — nearest-key merge for time series</span>
+pd.<span class="fn">merge_asof</span>(df_left, df_right, on=<span class="st">'timestamp'</span>, direction=<span class="st">'nearest'</span>)
+</code></pre>
+  </section>
+
+  <!-- ── 14. Date & Time ───────────────────────────────────────────── -->
+  <section id="s14">
+    <h2><span class="num">14</span> Working with Date &amp; Time</h2>
+<pre data-lang="python"><code><span class="cm"># Parse dates</span>
+df[<span class="st">'date'</span>] = pd.<span class="fn">to_datetime</span>(df[<span class="st">'date'</span>])
+df[<span class="st">'date'</span>] = pd.<span class="fn">to_datetime</span>(df[<span class="st">'date'</span>], format=<span class="st">'%Y-%m-%d'</span>)
+df[<span class="st">'date'</span>] = pd.<span class="fn">to_datetime</span>(df[<span class="st">'epoch'</span>], unit=<span class="st">'s'</span>)  <span class="cm"># Unix timestamp</span>
+
+<span class="cm"># Date ranges</span>
+pd.<span class="fn">date_range</span>(<span class="st">'2023-01-01'</span>, periods=<span class="nm">12</span>, freq=<span class="st">'ME'</span>)  <span class="cm"># Month end</span>
+pd.<span class="fn">date_range</span>(<span class="st">'2023-01-01'</span>, <span class="st">'2023-12-31'</span>, freq=<span class="st">'B'</span>) <span class="cm"># Business days</span>
+
+<span class="cm"># Timedelta</span>
+pd.<span class="fn">Timedelta</span>(days=<span class="nm">7</span>)
+df[<span class="st">'next_week'</span>] = df[<span class="st">'date'</span>] <span class="op">+</span> pd.<span class="fn">Timedelta</span>(days=<span class="nm">7</span>)
+
+<span class="cm"># .dt accessor</span>
+df[<span class="st">'year'</span>]       = df[<span class="st">'date'</span>].dt.year
+df[<span class="st">'month'</span>]      = df[<span class="st">'date'</span>].dt.month
+df[<span class="st">'day'</span>]        = df[<span class="st">'date'</span>].dt.day
+df[<span class="st">'hour'</span>]       = df[<span class="st">'date'</span>].dt.hour
+df[<span class="st">'dayofweek'</span>]  = df[<span class="st">'date'</span>].dt.dayofweek   <span class="cm"># 0=Monday</span>
+df[<span class="st">'quarter'</span>]    = df[<span class="st">'date'</span>].dt.quarter
+df[<span class="st">'weekday'</span>]    = df[<span class="st">'date'</span>].dt.<span class="fn">day_name</span>()
+df[<span class="st">'is_weekend'</span>] = df[<span class="st">'date'</span>].dt.dayofweek <span class="op">&gt;=</span> <span class="nm">5</span>
+
+<span class="cm"># Boolean flags</span>
+df[<span class="st">'date'</span>].dt.is_month_start
+df[<span class="st">'date'</span>].dt.is_month_end
+df[<span class="st">'date'</span>].dt.is_leap_year
+
+<span class="cm"># Timezone</span>
+df[<span class="st">'date'</span>] = df[<span class="st">'date'</span>].dt.<span class="fn">tz_localize</span>(<span class="st">'UTC'</span>)
+df[<span class="st">'date'</span>] = df[<span class="st">'date'</span>].dt.<span class="fn">tz_convert</span>(<span class="st">'America/New_York'</span>)
+</code></pre>
+    <div class="info-box">
+      <strong>Frequency aliases:</strong> D=Day, B=Business day, ME=Month End, QE=Quarter End, YE=Year End, W=Weekly, h=Hourly, T=Minutely, S=Secondly
+    </div>
+  </section>
+
+  <!-- ── 15. Text Data ─────────────────────────────────────────────── -->
+  <section id="s15">
+    <h2><span class="num">15</span> Working with Text Data</h2>
+    <p>All string methods are available via the <code>.str</code> accessor on a <code>Series</code>.</p>
+<pre data-lang="python"><code>s = df[<span class="st">'text_column'</span>]
+
+<span class="cm"># Case &amp; Whitespace</span>
+s.str.<span class="fn">lower</span>()  ;  s.str.<span class="fn">upper</span>()  ;  s.str.<span class="fn">title</span>()  ;  s.str.<span class="fn">swapcase</span>()
+s.str.<span class="fn">strip</span>()  ;  s.str.<span class="fn">lstrip</span>(<span class="st">'0'</span>)  ;  s.str.<span class="fn">rstrip</span>()
+
+<span class="cm"># Search</span>
+s.str.<span class="fn">contains</span>(<span class="st">'pattern'</span>, case=<span class="tp">False</span>, na=<span class="tp">False</span>)
+s.str.<span class="fn">startswith</span>(<span class="st">'prefix'</span>)  ;  s.str.<span class="fn">endswith</span>(<span class="st">'suffix'</span>)
+s.str.<span class="fn">match</span>(<span class="st">r'^\d{4}'</span>)        <span class="cm"># regex anchored at start</span>
+s.str.<span class="fn">count</span>(<span class="st">r'\d'</span>)            <span class="cm"># count matches per string</span>
+
+<span class="cm"># Replace</span>
+s.str.<span class="fn">replace</span>(<span class="st">'old'</span>, <span class="st">'new'</span>)
+s.str.<span class="fn">replace</span>(<span class="st">r'\d+'</span>, <span class="st">'NUM'</span>, regex=<span class="tp">True</span>)
+
+<span class="cm"># Split / Join</span>
+s.str.<span class="fn">split</span>(<span class="st">','</span>, expand=<span class="tp">True</span>, n=<span class="nm">2</span>)
+s.str.<span class="fn">rsplit</span>(<span class="st">'/'</span>, n=<span class="nm">1</span>, expand=<span class="tp">True</span>)
+s.str.<span class="fn">cat</span>(sep=<span class="st">', '</span>)
+
+<span class="cm"># Extract (regex groups)</span>
+s.str.<span class="fn">extract</span>(<span class="st">r'(\d{4})-(\d{2})-(\d{2})'</span>)
+s.str.<span class="fn">extractall</span>(<span class="st">r'(\d+)'</span>)
+s.str.<span class="fn">findall</span>(<span class="st">r'\d+'</span>)
+
+<span class="cm"># Formatting / Padding</span>
+s.str.<span class="fn">pad</span>(width=<span class="nm">10</span>, side=<span class="st">'left'</span>, fillchar=<span class="st">'0'</span>)
+s.str.<span class="fn">center</span>(<span class="nm">20</span>, <span class="st">'*'</span>)
+s.str.<span class="fn">zfill</span>(<span class="nm">5</span>)
+
+<span class="cm"># Slice / Length</span>
+s.str[<span class="nm">0</span>:<span class="nm">5</span>]   ;  s.str.<span class="fn">get</span>(<span class="nm">0</span>)  ;  s.str.<span class="fn">len</span>()  ;  s.str.<span class="fn">repeat</span>(<span class="nm">3</span>)
+
+<span class="cm"># One-hot encode</span>
+s.str.<span class="fn">get_dummies</span>(sep=<span class="st">'|'</span>)
+</code></pre>
+  </section>
+
+  <!-- ── 16. CSV & Excel Files ─────────────────────────────────────── -->
+  <section id="s16">
+    <h2><span class="num">16</span> Working with CSV and Excel Files</h2>
+
+    <h3>16.1 Advanced CSV Options</h3>
+<pre data-lang="python"><code>df = pd.<span class="fn">read_csv</span>(
+    <span class="st">'data.csv'</span>,
+    sep=<span class="st">';'</span>,                       <span class="cm"># semicolon separated</span>
+    decimal=<span class="st">','</span>,                   <span class="cm"># European decimal</span>
+    thousands=<span class="st">'.'</span>,                 <span class="cm"># thousands separator</span>
+    header=<span class="tp">None</span>,                   <span class="cm"># no header row</span>
+    names=[<span class="st">'col1'</span>,<span class="st">'col2'</span>,<span class="st">'col3'</span>], <span class="cm"># assign column names</span>
+    skiprows=<span class="nm">5</span>,
+    comment=<span class="st">'#'</span>,                   <span class="cm"># skip lines starting with #</span>
+    low_memory=<span class="tp">False</span>,
+    engine=<span class="st">'c'</span>,                    <span class="cm"># 'c' (fast) or 'python'</span>
+    chunksize=<span class="nm">50000</span>,
+    dtype={<span class="st">'id'</span>: str},
+    na_values=[<span class="st">'-'</span>, <span class="st">'N/A'</span>, <span class="st">'none'</span>],
+    true_values=[<span class="st">'yes'</span>,<span class="st">'Y'</span>],
+    false_values=[<span class="st">'no'</span>,<span class="st">'N'</span>],
+    parse_dates=[<span class="st">'date_col'</span>],
+    date_format=<span class="st">'%d/%m/%Y'</span>,
+    dayfirst=<span class="tp">True</span>,
+)
+</code></pre>
+
+    <h3>16.2 Chunked Reading (Large Files)</h3>
+<pre data-lang="python"><code>chunk_results = []
+<span class="kw">for</span> chunk <span class="kw">in</span> pd.<span class="fn">read_csv</span>(<span class="st">'large_file.csv'</span>, chunksize=<span class="nm">100_000</span>):
+    result = chunk.<span class="fn">groupby</span>(<span class="st">'dept'</span>)[<span class="st">'amount'</span>].<span class="fn">sum</span>()
+    chunk_results.<span class="fn">append</span>(result)
+
+final = pd.<span class="fn">concat</span>(chunk_results).<span class="fn">groupby</span>(level=<span class="nm">0</span>).<span class="fn">sum</span>()
+</code></pre>
+
+    <h3>16.3 Excel Advanced</h3>
+<pre data-lang="python"><code>df = pd.<span class="fn">read_excel</span>(<span class="st">'data.xlsx'</span>, usecols=<span class="st">'A:D'</span>, skiprows=<span class="nm">2</span>, nrows=<span class="nm">100</span>)
+
+sheets = pd.<span class="fn">read_excel</span>(<span class="st">'data.xlsx'</span>, sheet_name=<span class="tp">None</span>)  <span class="cm"># dict of DataFrames</span>
+
+<span class="kw">with</span> pd.<span class="fn">ExcelWriter</span>(<span class="st">'output.xlsx'</span>, engine=<span class="st">'xlsxwriter'</span>) <span class="kw">as</span> writer:
+    df.<span class="fn">to_excel</span>(writer, sheet_name=<span class="st">'Data'</span>, index=<span class="tp">False</span>)
+    workbook  = writer.book
+    worksheet = writer.sheets[<span class="st">'Data'</span>]
+    header_fmt = workbook.<span class="fn">add_format</span>({<span class="st">'bold'</span>: <span class="tp">True</span>, <span class="st">'bg_color'</span>: <span class="st">'#4472C4'</span>})
+    <span class="kw">for</span> col_num, value <span class="kw">in</span> <span class="fn">enumerate</span>(df.columns.values):
+        worksheet.<span class="fn">write</span>(<span class="nm">0</span>, col_num, value, header_fmt)
+</code></pre>
+  </section>
+
+  <!-- ── 17. Visualization ─────────────────────────────────────────── -->
+  <section id="s17">
+    <h2><span class="num">17</span> Visualization</h2>
+<pre data-lang="python"><code><span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+
+<span class="cm"># All plot kinds</span>
+df.<span class="fn">plot</span>()                                   <span class="cm"># line (default)</span>
+df.<span class="fn">plot</span>(kind=<span class="st">'bar'</span>)                         <span class="cm"># bar chart</span>
+df.<span class="fn">plot</span>(kind=<span class="st">'barh'</span>)                        <span class="cm"># horizontal bar</span>
+df.<span class="fn">plot</span>(kind=<span class="st">'hist'</span>, bins=<span class="nm">20</span>)             <span class="cm"># histogram</span>
+df.<span class="fn">plot</span>(kind=<span class="st">'box'</span>)                         <span class="cm"># box plot</span>
+df.<span class="fn">plot</span>(kind=<span class="st">'kde'</span>)                         <span class="cm"># density / KDE</span>
+df.<span class="fn">plot</span>(kind=<span class="st">'area'</span>)                        <span class="cm"># area chart</span>
+df.<span class="fn">plot</span>(kind=<span class="st">'scatter'</span>, x=<span class="st">'A'</span>, y=<span class="st">'B'</span>)    <span class="cm"># scatter</span>
+df.<span class="fn">plot</span>(kind=<span class="st">'hexbin'</span>, x=<span class="st">'A'</span>, y=<span class="st">'B'</span>, gridsize=<span class="nm">20</span>)
+df.<span class="fn">plot</span>(kind=<span class="st">'pie'</span>, y=<span class="st">'col'</span>)             <span class="cm"># pie chart</span>
+
+<span class="cm"># Formatting</span>
+df.<span class="fn">plot</span>(
+    kind=<span class="st">'line'</span>, title=<span class="st">'My Plot'</span>, figsize=(<span class="nm">12</span>, <span class="nm">6</span>),
+    xlabel=<span class="st">'X Axis'</span>, ylabel=<span class="st">'Y Axis'</span>,
+    legend=<span class="tp">True</span>, grid=<span class="tp">True</span>, alpha=<span class="nm">0.8</span>,
+    secondary_y=<span class="st">'col2'</span>
+)
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">'plot.png'</span>, dpi=<span class="nm">150</span>, bbox_inches=<span class="st">'tight'</span>)
+
+<span class="cm"># Time series visualization</span>
+ts.<span class="fn">plot</span>(figsize=(<span class="nm">15</span>, <span class="nm">5</span>), title=<span class="st">'Daily Values'</span>)
+ts.<span class="fn">resample</span>(<span class="st">'ME'</span>).<span class="fn">mean</span>().<span class="fn">plot</span>(kind=<span class="st">'bar'</span>)
+ts.<span class="fn">rolling</span>(<span class="nm">30</span>).<span class="fn">mean</span>().<span class="fn">plot</span>(label=<span class="st">'30-day MA'</span>)
+ts.<span class="fn">ewm</span>(span=<span class="nm">30</span>).<span class="fn">mean</span>().<span class="fn">plot</span>(label=<span class="st">'EWM'</span>, linestyle=<span class="st">'--'</span>)
+plt.<span class="fn">legend</span>()
+plt.<span class="fn">show</span>()
+</code></pre>
+  </section>
+
+  <!-- ── 18. Real-World Projects ───────────────────────────────────── -->
+  <section id="s18">
+    <h2><span class="num">18</span> Real-World Projects</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Project</th><th>Domain</th><th>Key Techniques</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Zomato Data Analysis</strong></td><td>Food Delivery</td><td>Cleaning, EDA, groupby, visualization</td></tr>
+          <tr><td><strong>IPL Data Analysis</strong></td><td>Sports</td><td>Aggregation, pivot tables, time series</td></tr>
+          <tr><td><strong>Airbnb Data Analysis</strong></td><td>Travel / Hospitality</td><td>Price analysis, geo-filtering, correlation</td></tr>
+          <tr><td><strong>Global Covid-19 Analysis</strong></td><td>Healthcare</td><td>Time series, resampling, multi-country</td></tr>
+          <tr><td><strong>Housing Price Prediction</strong></td><td>Real Estate</td><td>Feature engineering, correlation, ML</td></tr>
+          <tr><td><strong>Market Basket Analysis</strong></td><td>Retail</td><td>Co-occurrence, pivot, transactional data</td></tr>
+          <tr><td><strong>Titanic Survival Prediction</strong></td><td>ML Classic</td><td>Cleaning, encoding, feature selection</td></tr>
+          <tr><td><strong>Iris Flower Dataset EDA</strong></td><td>EDA Classic</td><td>Descriptive stats, scatter, clustering</td></tr>
+          <tr><td><strong>Customer Churn Analysis</strong></td><td>CRM</td><td>Binary classification, feature importance</td></tr>
+          <tr><td><strong>Car Price Prediction</strong></td><td>Automobile</td><td>Regression, outlier detection, encoding</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── 19. Quick Reference ───────────────────────────────────────── -->
+  <section id="s19">
+    <h2><span class="num">19</span> Quick Reference — Key APIs</h2>
+
+    <h3>DataFrame Methods</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>df.head(n)</code></td><td>First n rows (default 5)</td></tr>
+          <tr><td><code>df.tail(n)</code></td><td>Last n rows</td></tr>
+          <tr><td><code>df.sample(n)</code></td><td>Random n rows</td></tr>
+          <tr><td><code>df.info()</code></td><td>Column names, dtypes, non-null counts</td></tr>
+          <tr><td><code>df.describe()</code></td><td>Descriptive statistics</td></tr>
+          <tr><td><code>df.shape</code></td><td>(rows, columns)</td></tr>
+          <tr><td><code>df.dtypes</code></td><td>Data type of each column</td></tr>
+          <tr><td><code>df.columns</code></td><td>Column labels</td></tr>
+          <tr><td><code>df.index</code></td><td>Row labels</td></tr>
+          <tr><td><code>df.memory_usage(deep=True)</code></td><td>Memory per column</td></tr>
+          <tr><td><code>df.copy()</code></td><td>Deep copy</td></tr>
+          <tr><td><code>df.assign(...)</code></td><td>Create new columns (chainable)</td></tr>
+          <tr><td><code>df.pipe(func)</code></td><td>Pass DataFrame through a function</td></tr>
+          <tr><td><code>df.query(expr)</code></td><td>Filter with string expression</td></tr>
+          <tr><td><code>df.eval(expr)</code></td><td>Evaluate expression (may create columns)</td></tr>
+          <tr><td><code>df.sort_values(by)</code></td><td>Sort by column(s)</td></tr>
+          <tr><td><code>df.sort_index()</code></td><td>Sort by index</td></tr>
+          <tr><td><code>df.rank()</code></td><td>Rank values</td></tr>
+          <tr><td><code>df.nlargest(n, col)</code></td><td>Top n rows by column</td></tr>
+          <tr><td><code>df.nsmallest(n, col)</code></td><td>Bottom n rows by column</td></tr>
+          <tr><td><code>df.drop_duplicates()</code></td><td>Remove duplicate rows</td></tr>
+          <tr><td><code>df.dropna()</code></td><td>Remove rows/cols with NaN</td></tr>
+          <tr><td><code>df.fillna(val)</code></td><td>Fill NaN with value</td></tr>
+          <tr><td><code>df.interpolate()</code></td><td>Interpolate missing values</td></tr>
+          <tr><td><code>df.replace(old, new)</code></td><td>Replace values</td></tr>
+          <tr><td><code>df.rename(columns={})</code></td><td>Rename columns</td></tr>
+          <tr><td><code>df.drop(columns=list)</code></td><td>Drop columns</td></tr>
+          <tr><td><code>df.set_index(col)</code></td><td>Set column as index</td></tr>
+          <tr><td><code>df.reset_index()</code></td><td>Move index back to column</td></tr>
+          <tr><td><code>df.stack()</code></td><td>Columns → rows</td></tr>
+          <tr><td><code>df.unstack()</code></td><td>Rows → columns</td></tr>
+          <tr><td><code>df.pivot(...)</code></td><td>Reshape without aggregation</td></tr>
+          <tr><td><code>df.pivot_table(...)</code></td><td>Reshape with aggregation</td></tr>
+          <tr><td><code>df.melt(...)</code></td><td>Wide → long</td></tr>
+          <tr><td><code>df.explode(col)</code></td><td>List column → rows</td></tr>
+          <tr><td><code>df.groupby(by)</code></td><td>Group data</td></tr>
+          <tr><td><code>df.resample(freq)</code></td><td>Resample time series</td></tr>
+          <tr><td><code>df.rolling(n)</code></td><td>Rolling window calculations</td></tr>
+          <tr><td><code>df.expanding()</code></td><td>Expanding window</td></tr>
+          <tr><td><code>df.ewm(span)</code></td><td>Exponential weighted moving average</td></tr>
+          <tr><td><code>df.shift(n)</code></td><td>Shift values by n periods</td></tr>
+          <tr><td><code>df.diff(n)</code></td><td>First difference</td></tr>
+          <tr><td><code>df.pct_change()</code></td><td>Percent change</td></tr>
+          <tr><td><code>df.corr()</code></td><td>Correlation matrix</td></tr>
+          <tr><td><code>df.cov()</code></td><td>Covariance matrix</td></tr>
+          <tr><td><code>df.apply(func)</code></td><td>Apply function along axis</td></tr>
+          <tr><td><code>df.map(func)</code></td><td>Apply function element-wise</td></tr>
+          <tr><td><code>df.agg(funcs)</code></td><td>Aggregate with functions</td></tr>
+          <tr><td><code>df.transform(func)</code></td><td>Transform preserving shape</td></tr>
+          <tr><td><code>df.cumsum()</code></td><td>Cumulative sum</td></tr>
+          <tr><td><code>df.cumprod()</code></td><td>Cumulative product</td></tr>
+          <tr><td><code>df.cummax()</code></td><td>Cumulative maximum</td></tr>
+          <tr><td><code>df.cummin()</code></td><td>Cumulative minimum</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>I/O Functions</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>pd.read_csv()</code></td><td>Read CSV</td></tr>
+          <tr><td><code>pd.read_excel()</code></td><td>Read Excel</td></tr>
+          <tr><td><code>pd.read_json()</code></td><td>Read JSON</td></tr>
+          <tr><td><code>pd.read_parquet()</code></td><td>Read Parquet</td></tr>
+          <tr><td><code>pd.read_sql()</code></td><td>Read from SQL query</td></tr>
+          <tr><td><code>pd.read_html()</code></td><td>Read HTML tables</td></tr>
+          <tr><td><code>pd.read_hdf()</code></td><td>Read HDF5</td></tr>
+          <tr><td><code>pd.read_feather()</code></td><td>Read Feather format</td></tr>
+          <tr><td><code>pd.read_fwf()</code></td><td>Read fixed-width files</td></tr>
+          <tr><td><code>pd.json_normalize()</code></td><td>Normalize nested JSON</td></tr>
+          <tr><td><code>df.to_csv()</code></td><td>Write CSV</td></tr>
+          <tr><td><code>df.to_excel()</code></td><td>Write Excel</td></tr>
+          <tr><td><code>df.to_json()</code></td><td>Write JSON</td></tr>
+          <tr><td><code>df.to_parquet()</code></td><td>Write Parquet</td></tr>
+          <tr><td><code>df.to_sql()</code></td><td>Write to SQL</td></tr>
+          <tr><td><code>df.to_html()</code></td><td>Write HTML table</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Merge Functions</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>pd.merge()</code></td><td>SQL-style join on keys</td></tr>
+          <tr><td><code>pd.concat()</code></td><td>Concatenate along an axis</td></tr>
+          <tr><td><code>pd.merge_asof()</code></td><td>Nearest-key merge</td></tr>
+          <tr><td><code>df.join()</code></td><td>Join on index</td></tr>
+          <tr><td><code>df.combine_first()</code></td><td>Fill NaN from another DataFrame</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Options &amp; Settings</h3>
+<pre data-lang="python"><code>pd.<span class="fn">set_option</span>(<span class="st">'display.max_rows'</span>, <span class="nm">100</span>)
+pd.<span class="fn">set_option</span>(<span class="st">'display.max_columns'</span>, <span class="nm">50</span>)
+pd.<span class="fn">set_option</span>(<span class="st">'display.float_format'</span>, <span class="st">'{:.2f}'</span>.<span class="fn">format</span>)
+pd.<span class="fn">set_option</span>(<span class="st">'display.precision'</span>, <span class="nm">4</span>)
+pd.<span class="fn">set_option</span>(<span class="st">'mode.chained_assignment'</span>, <span class="tp">None</span>)  <span class="cm"># silence SettingWithCopyWarning</span>
+
+<span class="kw">with</span> pd.<span class="fn">option_context</span>(<span class="st">'display.max_rows'</span>, <span class="nm">50</span>, <span class="st">'display.precision'</span>, <span class="nm">2</span>):
+    <span class="fn">print</span>(df)
+
+pd.<span class="fn">reset_option</span>(<span class="st">'all'</span>)  <span class="cm"># reset all options to defaults</span>
+</code></pre>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>
+      <strong>Compiled:</strong> March 2026 &nbsp;|&nbsp;
+      <strong>Covers:</strong> 19 sections — all major Pandas concepts with runnable code examples.
+    </p>
+  </footer>
+
+</main>
+
+<script>
+  // Highlight active sidebar link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('#sidebar a');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`#sidebar a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

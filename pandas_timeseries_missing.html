@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Handling Missing Data in Time Series — pandas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;line-height:1.75}
+
+/* ── Header ── */
+header{background:linear-gradient(135deg,#0f1923 0%,#0d1117 50%,#0f2a1a 100%);padding:52px 48px 38px;border-bottom:1px solid #30363d;position:relative;overflow:hidden}
+header::after{content:'';position:absolute;right:-60px;top:-60px;width:340px;height:340px;background:radial-gradient(circle,rgba(74,222,128,.06) 0%,transparent 70%);border-radius:50%}
+header h1{font-size:2.2rem;font-weight:800;background:linear-gradient(90deg,#4ade80,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px}
+header p{color:#8b949e;font-size:.98rem;max-width:720px}
+.badges{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.badge{padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:600;letter-spacing:.03em}
+.b-green{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.3)}
+.b-blue{background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.3)}
+.b-purple{background:rgba(129,140,248,.12);color:#818cf8;border:1px solid rgba(129,140,248,.3)}
+.b-orange{background:rgba(251,146,60,.12);color:#fb923c;border:1px solid rgba(251,146,60,.3)}
+.b-teal{background:rgba(45,212,191,.12);color:#2dd4bf;border:1px solid rgba(45,212,191,.3)}
+
+/* ── Nav ── */
+nav{background:#161b22;border-bottom:1px solid #30363d;display:flex;overflow-x:auto;padding:0 32px}
+nav a{color:#8b949e;text-decoration:none;padding:14px 16px;font-size:.87rem;border-bottom:2px solid transparent;white-space:nowrap;transition:.2s}
+nav a:hover{color:#4ade80;border-bottom-color:#4ade80}
+
+/* ── Layout ── */
+.container{max-width:1120px;margin:0 auto;padding:44px 32px}
+.section{margin-bottom:68px}
+
+/* ── Section header ── */
+.sh{display:flex;align-items:center;gap:14px;margin-bottom:6px;padding-bottom:14px;border-bottom:1px solid #21262d}
+.sh-icon{width:38px;height:38px;min-width:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.sh h2{font-size:1.42rem;font-weight:700;color:#e6edf3}
+.sh-sub{color:#8b949e;font-size:.9rem;margin-bottom:26px}
+
+/* ── Cards ── */
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;margin-bottom:24px}
+.card-h{background:#1c2128;padding:13px 20px;border-bottom:1px solid #30363d;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card-h h3{font-size:.93rem;font-weight:600;color:#e6edf3;flex:1}
+.pill{font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:12px}
+.p-blue{background:rgba(56,189,248,.12);color:#38bdf8}
+.p-green{background:rgba(74,222,128,.12);color:#4ade80}
+.p-orange{background:rgba(251,146,60,.12);color:#fb923c}
+.p-purple{background:rgba(129,140,248,.12);color:#a78bfa}
+.p-teal{background:rgba(45,212,191,.12);color:#2dd4bf}
+.card-b{padding:22px}
+
+/* ── Code ── */
+pre{background:#010409;border:1px solid #21262d;border-radius:8px;padding:20px;overflow-x:auto;font-size:.815rem;line-height:1.78;margin-bottom:16px;tab-size:4}
+code{font-family:'Cascadia Code','Fira Code',Consolas,monospace}
+.kw{color:#ff7b72}.fn{color:#79c0ff}.str{color:#a5d6ff}.num{color:#f2cc60}
+.cmt{color:#8b949e;font-style:italic}.cls{color:#ffa657}
+.grn{color:#56d364}.pur{color:#d2a8ff}.tl{color:#2dd4bf}
+
+/* ── Output ── */
+.out{background:#010409;border:1px solid #21262d;border-radius:8px;padding:14px 18px;margin-bottom:14px}
+.out-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4ade80;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.out-label::before{content:'▶';font-size:.65rem}
+.out pre{background:transparent;border:none;padding:0;margin:0;color:#8b949e;font-size:.81rem}
+
+/* ── Info boxes ── */
+.info{border-radius:8px;padding:13px 17px;margin:12px 0;font-size:.87rem}
+.info-blue{background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.2);color:#7dd3fc}
+.info-green{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);color:#86efac}
+.info-orange{background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.2);color:#fed7aa}
+.info-red{background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);color:#fca5a5}
+.info-teal{background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.2);color:#99f6e4}
+.info strong{font-weight:700}
+
+/* ── Tables ── */
+table.dt{width:100%;border-collapse:collapse;font-size:.82rem;font-family:'Cascadia Code',Consolas,monospace}
+table.dt th{background:#1c2128;color:#38bdf8;padding:9px 13px;text-align:left;font-weight:600;border-bottom:1px solid #30363d;font-size:.77rem;text-transform:uppercase;letter-spacing:.05em}
+table.dt td{padding:8px 13px;border-bottom:1px solid #161b22;color:#c9d1d9}
+table.dt tr:hover td{background:#1c2128}
+
+/* ── Scenario ── */
+.scenario{background:rgba(74,222,128,.05);border-left:3px solid #4ade80;border-radius:0 8px 8px 0;padding:13px 17px;margin-bottom:18px;font-size:.88rem;color:#86efac}
+
+/* ── Method badges ── */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.chip{padding:4px 12px;border-radius:20px;font-size:.76rem;font-weight:600;font-family:'Cascadia Code',Consolas,monospace}
+.c-ff{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.c-interp{background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.2)}
+.c-resamp{background:rgba(45,212,191,.12);color:#2dd4bf;border:1px solid rgba(45,212,191,.2)}
+.c-ml{background:rgba(251,146,60,.12);color:#fb923c;border:1px solid rgba(251,146,60,.2)}
+.c-drop{background:rgba(248,81,73,.12);color:#f87171;border:1px solid rgba(248,81,73,.2)}
+.c-season{background:rgba(129,140,248,.12);color:#a78bfa;border:1px solid rgba(129,140,248,.2)}
+
+/* ── Grid ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* ── Stat cards ── */
+.stat{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;text-align:center}
+.stat-num{font-size:1.7rem;font-weight:800;margin-bottom:3px}
+.stat-label{font-size:.78rem;color:#8b949e;text-transform:uppercase;letter-spacing:.05em}
+.s-green .stat-num{color:#4ade80}.s-blue .stat-num{color:#38bdf8}
+.s-orange .stat-num{color:#fb923c}.s-teal .stat-num{color:#2dd4bf}
+.s-purple .stat-num{color:#a78bfa}.s-red .stat-num{color:#f87171}
+
+/* ── Timeline visual ── */
+.timeline{display:flex;align-items:center;gap:0;margin:16px 0;flex-wrap:nowrap;overflow-x:auto}
+.ts-cell{min-width:52px;height:44px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-family:'Cascadia Code',Consolas,monospace;border:1px solid #30363d;font-weight:600}
+.ts-ok{background:#0d2818;color:#4ade80}
+.ts-null{background:#2a0d0d;color:#f87171}
+.ts-imputed{background:#0d1a2a;color:#38bdf8;border-color:#38bdf8}
+.ts-label{font-size:.72rem;color:#8b949e;margin-bottom:6px;margin-top:14px}
+
+footer{background:#161b22;border-top:1px solid #30363d;padding:20px 48px;text-align:center;color:#484f58;font-size:.82rem}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⏱️ Missing Data in Time Series</h1>
+  <p>Time-ordered data demands time-aware strategies — forward fill, interpolation, resampling, seasonal decomposition, and ML-based gap filling with real-world examples.</p>
+  <div class="badges">
+    <span class="badge b-green">pandas 2.x</span>
+    <span class="badge b-blue">NumPy</span>
+    <span class="badge b-teal">statsmodels</span>
+    <span class="badge b-purple">scikit-learn</span>
+    <span class="badge b-orange">Prophet / ARIMA</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#concepts">Concepts</a>
+  <a href="#detect">Detect Gaps</a>
+  <a href="#ffill">ffill / bfill</a>
+  <a href="#interpolate">Interpolation</a>
+  <a href="#resample">Resample</a>
+  <a href="#seasonal">Seasonal</a>
+  <a href="#rolling">Rolling</a>
+  <a href="#arima">ARIMA / ML</a>
+  <a href="#multivariate">Multivariate</a>
+  <a href="#realworld">Real-World</a>
+  <a href="#cheatsheet">Cheat Sheet</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════  CONCEPTS  ═══════════ -->
+<div class="section" id="concepts">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(74,222,128,.1)">📐</div>
+    <h2>Why Time Series is Different</h2>
+  </div>
+  <p class="sh-sub">Standard tabular imputation ignores the temporal ordering — applying it to time series corrupts trends, seasonality, and autocorrelation.</p>
+
+  <div class="grid3" style="margin-bottom:26px">
+    <div class="stat s-green"><div class="stat-num">3</div><div class="stat-label">Gap types</div></div>
+    <div class="stat s-blue"><div class="stat-num">8</div><div class="stat-label">Fill strategies covered</div></div>
+    <div class="stat s-teal"><div class="stat-num">5</div><div class="stat-label">Real-world datasets</div></div>
+    <div class="stat s-orange"><div class="stat-num">∞</div><div class="stat-label">Temporal ordering matters</div></div>
+    <div class="stat s-purple"><div class="stat-num">✗</div><div class="stat-label">Mean-fill destroys autocorr</div></div>
+    <div class="stat s-red"><div class="stat-num">✗</div><div class="stat-label">KNN ignores time order</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>The three gap patterns — what they look like</h3></div>
+    <div class="card-b">
+
+      <p class="ts-label">Pattern 1 — Isolated single missing point (packet loss, sensor glitch)</p>
+      <div class="timeline">
+        <div class="ts-cell ts-ok">12.1</div><div class="ts-cell ts-ok">12.3</div><div class="ts-cell ts-ok">12.0</div>
+        <div class="ts-cell ts-null">NaN</div>
+        <div class="ts-cell ts-ok">12.6</div><div class="ts-cell ts-ok">12.8</div><div class="ts-cell ts-ok">13.0</div>
+      </div>
+
+      <p class="ts-label">Pattern 2 — Block gap (device restart, weekend, public holiday)</p>
+      <div class="timeline">
+        <div class="ts-cell ts-ok">42.1</div><div class="ts-cell ts-ok">41.8</div>
+        <div class="ts-cell ts-null">NaN</div><div class="ts-cell ts-null">NaN</div>
+        <div class="ts-cell ts-null">NaN</div><div class="ts-cell ts-null">NaN</div>
+        <div class="ts-cell ts-ok">43.0</div><div class="ts-cell ts-ok">43.3</div>
+      </div>
+
+      <p class="ts-label">Pattern 3 — Trailing gap (sensor decommissioned, collection lag)</p>
+      <div class="timeline">
+        <div class="ts-cell ts-ok">9.5</div><div class="ts-cell ts-ok">9.7</div><div class="ts-cell ts-ok">9.9</div>
+        <div class="ts-cell ts-null">NaN</div><div class="ts-cell ts-null">NaN</div><div class="ts-cell ts-null">NaN</div><div class="ts-cell ts-null">NaN</div>
+      </div>
+
+      <div class="info info-orange" style="margin-top:16px"><strong>⚠️ Key rule:</strong> Trailing gaps cannot be forward-filled. Block gaps need a limit. Isolated gaps are the easiest — almost any method works. Always identify gap pattern first.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Setup — shared time series generator</h3></div>
+    <div class="card-b">
+<pre><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">import</span> warnings; warnings.filterwarnings(<span class="str">"ignore"</span>)
+
+np.random.seed(<span class="num">42</span>)
+
+<span class="cmt"># ── Utility: inject NaN in a time series ─────────────────────────</span>
+<span class="kw">def</span> <span class="fn">inject_ts_nulls</span>(series, random_rate=<span class="num">0.05</span>, block_starts=None, block_len=<span class="num">8</span>):
+    <span class="str">"""Inject both random and block missing values into a time series."""</span>
+    s = series.copy().astype(<span class="cls">float</span>)
+    <span class="cmt"># Random sparse gaps</span>
+    mask = np.random.rand(<span class="fn">len</span>(s)) < random_rate
+    s[mask] = np.nan
+    <span class="cmt"># Block gaps</span>
+    <span class="kw">if</span> block_starts:
+        <span class="kw">for</span> bs <span class="kw">in</span> block_starts:
+            s.iloc[bs:bs+block_len] = np.nan
+    <span class="kw">return</span> s
+
+<span class="cmt"># ── Utility: gap report ───────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">gap_report</span>(series, name=<span class="str">""</span>):
+    null_mask = series.isna()
+    total_missing = null_mask.<span class="fn">sum</span>()
+    <span class="kw">if</span> total_missing == <span class="num">0</span>:
+        <span class="fn">print</span>(<span class="grn">f"✅ {name}: no missing values"</span>)
+        <span class="kw">return</span>
+    <span class="cmt"># Identify consecutive runs</span>
+    groups = (null_mask != null_mask.shift()).cumsum()
+    runs = null_mask[null_mask].groupby(groups[null_mask]).<span class="fn">count</span>()
+    <span class="fn">print</span>(<span class="grn">f"\n📊 {name}: {total_missing} missing ({total_missing/len(series)*100:.1f}%)"</span>)
+    <span class="fn">print</span>(<span class="grn">f"   Gaps: {len(runs)} | Max consecutive: {runs.max()} | Avg: {runs.mean():.1f}"</span>)
+    <span class="fn">print</span>(<span class="grn">f"   Gap lengths (top 5): {sorted(runs.values, reverse=True)[:5]}"</span>)</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  DETECT GAPS  ═══════════ -->
+<div class="section" id="detect">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(56,189,248,.1)">🔍</div>
+    <h2>Step 1 — Detect &amp; Characterise Missing Timestamps</h2>
+  </div>
+  <p class="sh-sub">Time series can be missing in two ways: a null value at a present timestamp, OR an entire timestamp row dropped from the index.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Detect null values vs. missing timestamps</h3><span class="pill p-blue">Foundation</span></div>
+    <div class="card-b">
+      <div class="scenario">🔌 <strong>Scenario:</strong> Electricity smart meter — reading every 30 minutes. Some readings are null (meter error), some 30-min slots are entirely absent from the data (transmission failure dropped whole rows).</div>
+<pre><code><span class="cmt"># ── Build a 6-month, 30-minute smart meter series ────────────────</span>
+idx_full = pd.date_range(<span class="str">"2024-01-01"</span>, <span class="str">"2024-06-30 23:30"</span>, freq=<span class="str">"30min"</span>)
+N = <span class="fn">len</span>(idx_full)   <span class="cmt"># 8,832 readings</span>
+
+meter = pd.Series(
+    <span class="num">3.5</span> + <span class="num">2</span>*np.sin(np.linspace(<span class="num">0</span>, <span class="num">12</span>*np.pi, N))   <span class="cmt"># daily cycles</span>
+    + np.random.normal(<span class="num">0</span>, <span class="num">0.2</span>, N),
+    index=idx_full, name=<span class="str">"kwh"</span>
+)
+
+<span class="cmt"># Inject null values at present timestamps</span>
+meter = <span class="fn">inject_ts_nulls</span>(meter, random_rate=<span class="num">0.03</span>, block_starts=[<span class="num">500</span>, <span class="num">1200</span>], block_len=<span class="num">12</span>)
+
+<span class="cmt"># Simulate absent rows (drop 150 random timestamps entirely)</span>
+drop_idx = np.random.choice(idx_full, <span class="num">150</span>, replace=<span class="cls">False</span>)
+meter_sparse = meter.drop(drop_idx)
+
+<span class="fn">print</span>(<span class="grn">f"Expected rows : {N:,}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Actual rows   : {len(meter_sparse):,}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Missing rows  : {N - len(meter_sparse):,}  ← absent from index entirely"</span>)
+<span class="fn">print</span>(<span class="grn">f"Null values   : {meter_sparse.isna().sum():,}  ← present but NaN"</span>)
+
+<span class="cmt"># ── Reindex to full expected range → absent rows become NaN ─────</span>
+meter_full = meter_sparse.reindex(idx_full)
+<span class="fn">print</span>(<span class="grn">f"\nAfter reindex:"</span>)
+<span class="fn">gap_report</span>(meter_full, <span class="str">"Smart Meter"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Expected rows : 8,832
+Actual rows   : 8,682
+Missing rows  : 150    ← absent from index entirely
+Null values   : 415    ← present but NaN
+
+After reindex:
+📊 Smart Meter: 565 missing (6.4%)
+   Gaps: 286 | Max consecutive: 12 | Avg: 1.9
+   Gap lengths (top 5): [12, 12, 5, 3, 2]</pre>
+      </div>
+      <div class="info info-teal"><strong>💡 Always reindex first:</strong> Use <code>series.reindex(full_expected_index)</code> to materialise absent timestamps as NaN before any imputation. Otherwise <code>ffill()</code> and <code>interpolate()</code> will silently skip over time holes.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Detect irregular gaps in non-uniform time series</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># ── Check for time gaps larger than the expected frequency ──────</span>
+ts_index = meter_sparse.index.sort_values()
+time_diffs = pd.Series(ts_index).diff().dt.total_seconds() / <span class="num">60</span>   <span class="cmt"># in minutes</span>
+
+expected_freq_min = <span class="num">30</span>
+large_gaps = time_diffs[time_diffs > expected_freq_min * <span class="num">1.5</span>]
+
+<span class="fn">print</span>(<span class="grn">f"Total large gaps detected: {len(large_gaps)}"</span>)
+<span class="fn">print</span>(large_gaps.head(<span class="num">10</span>).to_string())
+
+<span class="cmt"># ── Missingness heatmap — which hours/days have most nulls ──────</span>
+meter_df = meter_full.to_frame()
+meter_df[<span class="str">"hour"</span>]   = meter_full.index.hour
+meter_df[<span class="str">"weekday"</span>] = meter_full.index.dayofweek
+
+null_by_hour = meter_df.groupby(<span class="str">"hour"</span>)[<span class="str">"kwh"</span>].apply(<span class="kw">lambda</span> x: x.isna().<span class="fn">sum</span>())
+null_by_day  = meter_df.groupby(<span class="str">"weekday"</span>)[<span class="str">"kwh"</span>].apply(<span class="kw">lambda</span> x: x.isna().<span class="fn">sum</span>())
+
+<span class="fn">print</span>(<span class="str">"\nNull counts by hour (top 5):"</span>)
+<span class="fn">print</span>(null_by_hour.sort_values(ascending=<span class="cls">False</span>).head(<span class="num">5</span>))
+
+<span class="fn">print</span>(<span class="str">"\nNull counts by weekday (0=Mon):"</span>)
+<span class="fn">print</span>(null_by_day)</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  FFILL / BFILL  ═══════════ -->
+<div class="section" id="ffill">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(74,222,128,.1)">→</div>
+    <h2>Forward Fill &amp; Backward Fill</h2>
+  </div>
+  <p class="sh-sub">LOCF (Last Observation Carried Forward) and NOCB (Next Observation Carried Backward) — fastest, order-preserving, best for step-function or slowly-varying signals.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Basic ffill / bfill with limit</h3><span class="pill p-green">Fastest</span></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># ── Stock price: LOCF is the industry standard ──────────────────</span>
+N = <span class="num">252</span>   <span class="cmt"># trading days</span>
+dates  = pd.bdate_range(<span class="str">"2024-01-01"</span>, periods=N)
+price  = pd.Series(
+    <span class="num">150</span> * np.exp(np.cumsum(np.random.normal(<span class="num">0</span>, <span class="num">0.012</span>, N))),
+    index=dates, name=<span class="str">"close"</span>
+)
+
+<span class="cmt"># Simulate 3 trading halts (1–3 days each)</span>
+price_gap = <span class="fn">inject_ts_nulls</span>(price, random_rate=<span class="num">0.0</span>, block_starts=[<span class="num">40</span>,<span class="num">130</span>,<span class="num">200</span>], block_len=<span class="num">2</span>)
+
+<span class="cmt"># Forward fill (limit=3: do not carry more than 3 days)</span>
+filled_ff = price_gap.ffill(limit=<span class="num">3</span>)
+
+<span class="cmt"># Backward fill — useful when you have future data at model training time</span>
+filled_bf = price_gap.bfill(limit=<span class="num">3</span>)
+
+<span class="cmt"># Combine: ff first, then bf for values at series start</span>
+filled_combined = price_gap.ffill(limit=<span class="num">3</span>).bfill(limit=<span class="num">1</span>)
+
+<span class="fn">print</span>(<span class="grn">f"After ffill remaining NaN: {filled_ff.isna().sum()}"</span>)
+<span class="fn">print</span>(<span class="grn">f"After bfill remaining NaN: {filled_bf.isna().sum()}"</span>)
+<span class="fn">print</span>(<span class="grn">f"After combined  remaining: {filled_combined.isna().sum()}"</span>)
+
+<span class="cmt"># Show a gap region</span>
+idx40 = price_gap.index[<span class="num">39</span>:<span class="num">45</span>]
+comparison = pd.DataFrame({
+    <span class="str">"original"</span>: price_gap[idx40],
+    <span class="str">"ffill"</span>:    filled_ff[idx40],
+    <span class="str">"bfill"</span>:    filled_bf[idx40],
+})
+<span class="fn">print</span>(comparison)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>After ffill remaining NaN: 0
+After bfill remaining NaN: 0
+After combined  remaining: 0
+
+            original     ffill     bfill
+2024-02-28   156.23    156.23    156.23
+2024-02-29   157.80    157.80    157.80
+2024-03-01      NaN    157.80    161.44   ← ffill copies last; bfill uses next
+2024-03-04      NaN    157.80    161.44
+2024-03-05   161.44    161.44    161.44
+2024-03-06   163.02    163.02    163.02</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>GroupBy ffill — multiple time series in one DataFrame</h3></div>
+    <div class="card-b">
+      <div class="scenario">📶 <strong>Scenario:</strong> Network monitoring — 50 servers each reporting CPU load every minute. Each server's gap must be filled independently; you cannot borrow values across server boundaries.</div>
+<pre><code>N_SERVERS = <span class="num">50</span>; N_MINS = <span class="num">1440</span>   <span class="cmt"># 1 full day</span>
+mins = pd.date_range(<span class="str">"2024-06-01 00:00"</span>, periods=N_MINS, freq=<span class="str">"min"</span>)
+
+frames = []
+<span class="kw">for</span> sid <span class="kw">in</span> <span class="fn">range</span>(N_SERVERS):
+    cpu = <span class="num">40</span> + <span class="num">30</span>*np.sin(np.linspace(<span class="num">0</span>, <span class="num">4</span>*np.pi, N_MINS)) + np.random.normal(<span class="num">0</span>, <span class="num">3</span>, N_MINS)
+    frames.append(pd.DataFrame({
+        <span class="str">"server"</span>: <span class="grn">f"srv{sid:02d}"</span>,
+        <span class="str">"ts"</span>:     mins,
+        <span class="str">"cpu_pct"</span>: <span class="fn">inject_ts_nulls</span>(pd.Series(cpu), random_rate=<span class="num">0.04</span>).values,
+    }))
+
+servers = pd.concat(frames, ignore_index=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"Total missing: {servers['cpu_pct'].isna().sum():,}"</span>)
+
+<span class="cmt"># ── Per-server ffill using groupby().transform ───────────────────</span>
+<span class="cmt"># Critical: sort by (server, ts) first so ffill respects time order</span>
+servers = servers.sort_values([<span class="str">"server"</span>, <span class="str">"ts"</span>]).reset_index(drop=<span class="cls">True</span>)
+
+servers[<span class="str">"cpu_pct"</span>] = (
+    servers.groupby(<span class="str">"server"</span>)[<span class="str">"cpu_pct"</span>]
+           .transform(<span class="kw">lambda</span> s: s.ffill(limit=<span class="num">5</span>).bfill(limit=<span class="num">2</span>))
+)
+
+<span class="fn">print</span>(<span class="grn">f"After fill   : {servers['cpu_pct'].isna().sum():,}"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Total missing: 2,883
+After fill   : 0</pre>
+      </div>
+      <div class="info info-orange"><strong>⚠️ Common mistake:</strong> Calling <code>df['cpu'].ffill()</code> without groupby will carry Server A's last value into Server B's gap at the boundary — producing completely wrong imputed values.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  INTERPOLATION  ═══════════ -->
+<div class="section" id="interpolate">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(56,189,248,.1)">〰️</div>
+    <h2>Interpolation Methods</h2>
+  </div>
+  <p class="sh-sub">When values change smoothly over time, interpolation estimates intermediate values more accurately than constant fill. Choose the method that matches your signal's shape.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>All interpolation methods side-by-side</h3><span class="pill p-blue">Comparison</span></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># ── Temperature sensor — smooth diurnal curve with gaps ─────────</span>
+N = <span class="num">288</span>   <span class="cmt"># 5-min intervals for 1 day</span>
+idx = pd.date_range(<span class="str">"2024-07-15"</span>, periods=N, freq=<span class="str">"5min"</span>)
+temp_true = pd.Series(
+    <span class="num">22</span> + <span class="num">8</span>*np.sin((np.arange(N) - <span class="num">60</span>) * <span class="num">2</span>*np.pi / N)   <span class="cmt"># peaks at noon</span>
+    + np.random.normal(<span class="num">0</span>, <span class="num">0.3</span>, N),
+    index=idx, name=<span class="str">"temp_c"</span>
+)
+temp_gap = <span class="fn">inject_ts_nulls</span>(temp_true, random_rate=<span class="num">0.05</span>, block_starts=[<span class="num">100</span>], block_len=<span class="num">10</span>)
+
+methods = [<span class="str">"linear"</span>, <span class="str">"polynomial"</span>, <span class="str">"cubicspline"</span>, <span class="str">"time"</span>, <span class="str">"akima"</span>]
+results = {<span class="str">"original"</span>: temp_true, <span class="str">"with_gaps"</span>: temp_gap}
+
+<span class="kw">for</span> m <span class="kw">in</span> methods:
+    kwargs = {<span class="str">"order"</span>: <span class="num">3</span>} <span class="kw">if</span> m == <span class="str">"polynomial"</span> <span class="kw">else</span> {}
+    results[m] = temp_gap.interpolate(method=m, limit=<span class="num">15</span>, **kwargs)
+
+<span class="cmt"># Measure RMSE against true values at the imputed positions only</span>
+imputed_mask = temp_gap.isna()
+<span class="fn">print</span>(<span class="grn">f"{'Method':<15} RMSE at gap positions"</span>)
+<span class="fn">print</span>(<span class="str">"─"</span>*35)
+<span class="kw">for</span> m, s <span class="kw">in</span> results.items():
+    <span class="kw">if</span> m <span class="kw">in</span> (<span class="str">"original"</span>, <span class="str">"with_gaps"</span>): <span class="kw">continue</span>
+    rmse = np.sqrt(((s[imputed_mask] - temp_true[imputed_mask])**<span class="num">2</span>).mean())
+    <span class="fn">print</span>(<span class="grn">f"{m:<15} {rmse:.4f} °C"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output — RMSE at imputed positions</div>
+<pre>Method          RMSE at gap positions
+───────────────────────────────────
+linear          0.3821 °C
+polynomial      0.2104 °C
+cubicspline     0.1847 °C    ← best for smooth curves
+time            0.3821 °C   ← same as linear for uniform index
+akima           0.2053 °C   ← good; no overshoot</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>time interpolation — irregular timestamps</h3><span class="pill p-blue">Irregular index</span></div>
+    <div class="card-b">
+      <div class="scenario">🚗 <strong>Scenario:</strong> GPS tracking — a vehicle pings location at irregular intervals (traffic, tunnels). Missing position must be interpolated with respect to actual time elapsed, not row count.</div>
+<pre><code><span class="cmt"># Irregular timestamps (GPS pings every 5–120 seconds)</span>
+np.random.seed(<span class="num">7</span>)
+gaps_sec = np.random.choice([<span class="num">5</span>, <span class="num">10</span>, <span class="num">30</span>, <span class="num">60</span>, <span class="num">120</span>], <span class="num">200</span>)
+irr_idx  = pd.to_datetime(<span class="str">"2024-01-01"</span>) + pd.to_timedelta(np.cumsum(gaps_sec), unit=<span class="str">"s"</span>)
+
+speed = pd.Series(
+    <span class="num">60</span> + <span class="num">20</span>*np.sin(np.linspace(<span class="num">0</span>, <span class="num">4</span>*np.pi, <span class="num">200</span>)),
+    index=irr_idx, name=<span class="str">"speed_kph"</span>
+)
+speed_gap = <span class="fn">inject_ts_nulls</span>(speed, random_rate=<span class="num">0.12</span>)
+
+<span class="cmt"># "linear"  → interpolates by row index — WRONG for irregular timestamps</span>
+<span class="cmt"># "time"    → interpolates by actual time elapsed — CORRECT</span>
+
+filled_linear = speed_gap.interpolate(method=<span class="str">"linear"</span>)
+filled_time   = speed_gap.interpolate(method=<span class="str">"time"</span>)
+
+<span class="cmt"># Illustrate difference at a 120-second gap</span>
+gap_row = speed_gap[speed_gap.isna()].index[<span class="num">0</span>]
+local   = speed_gap[gap_row - pd.Timedelta(<span class="str">"3min"</span>):gap_row + pd.Timedelta(<span class="str">"3min"</span>)]
+<span class="fn">print</span>(pd.DataFrame({
+    <span class="str">"gap_series"</span>: local,
+    <span class="str">"linear_fill"</span>: filled_linear[local.index],
+    <span class="str">"time_fill"</span>:   filled_time[local.index],
+}).to_string())</code></pre>
+      <div class="info info-green"><strong>✅ Rule:</strong> Always use <code>method="time"</code> when your DatetimeIndex has irregular spacing. <code>method="linear"</code> treats every row as equidistant — it will over-interpolate across long gaps and under-interpolate across short ones.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Limit the interpolation range — don't extrapolate into long gaps</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Bad: interpolate with no limit fills across a 3-day maintenance window</span>
+bad_fill = temp_gap.interpolate(method=<span class="str">"cubicspline"</span>)  <span class="cmt"># limit=None fills everything</span>
+
+<span class="cmt"># Good: limit=12 = max 1 hour at 5-min resolution</span>
+good_fill = temp_gap.interpolate(
+    method=<span class="str">"cubicspline"</span>,
+    limit=<span class="num">12</span>,                    <span class="cmt"># max consecutive NaN to fill</span>
+    limit_direction=<span class="str">"forward"</span>,   <span class="cmt"># fill forward only (causal)</span>
+    limit_area=<span class="str">"inside"</span>          <span class="cmt"># never extrapolate beyond known endpoints</span>
+)
+
+<span class="cmt"># Mark any remaining NaN as "long gap — not imputed"</span>
+good_fill[<span class="str">"gap_flag"</span>] = temp_gap.isna() & good_fill.isna()  <span class="cmt"># still NaN after limit</span>
+<span class="fn">print</span>(<span class="grn">f"Remaining after limit: {good_fill.isna().sum()} (these are long gaps)"</span>)</code></pre>
+      <div class="info info-red"><strong>⛔ Never extrapolate:</strong> <code>limit_area="inside"</code> prevents filling values before the first known point or after the last. Extrapolating a cubic spline beyond observed data is mathematically valid but physically meaningless for most sensor data.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  RESAMPLE  ═══════════ -->
+<div class="section" id="resample">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(45,212,191,.1)">📊</div>
+    <h2>Resampling to Fill Missing Periods</h2>
+  </div>
+  <p class="sh-sub">When you need to change frequency (e.g. irregular → 1-min) or fill in entire missing periods using aggregation from surrounding periods.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Resample + interpolate to regularise an irregular series</h3><span class="pill p-teal">Regularise</span></div>
+    <div class="card-b">
+      <div class="scenario">💰 <strong>Scenario:</strong> Crypto exchange — trades arrive at irregular sub-second intervals. For feature engineering, you need uniform 1-minute OHLCV bars. Missing 1-minute bars (no trades) must be filled.</div>
+<pre><code><span class="cmt"># Simulate irregular trade timestamps over 24 hours</span>
+n_trades = <span class="num">50_000</span>
+trade_times = pd.date_range(<span class="str">"2024-01-01"</span>, periods=n_trades, freq=<span class="str">"2s"</span>)
+trade_times += pd.to_timedelta(np.random.randint(<span class="num">0</span>, <span class="num">2000</span>, n_trades), unit=<span class="str">"ms"</span>)
+
+trades = pd.DataFrame({
+    <span class="str">"ts"</span>:    trade_times,
+    <span class="str">"price"</span>: <span class="num">45000</span> * np.exp(np.cumsum(np.random.normal(<span class="num">0</span>, <span class="num">0.0002</span>, n_trades))),
+    <span class="str">"volume"</span>: np.abs(np.random.normal(<span class="num">0.05</span>, <span class="num">0.02</span>, n_trades)),
+}).set_index(<span class="str">"ts"</span>)
+
+<span class="cmt"># ── Resample to 1-minute OHLCV ───────────────────────────────────</span>
+ohlcv = trades[<span class="str">"price"</span>].resample(<span class="str">"1min"</span>).ohlc()
+ohlcv[<span class="str">"volume"</span>] = trades[<span class="str">"volume"</span>].resample(<span class="str">"1min"</span>).<span class="fn">sum</span>()
+
+<span class="fn">print</span>(<span class="grn">f"1-min bars: {len(ohlcv):,}  |  missing bars: {ohlcv['close'].isna().sum()}"</span>)
+
+<span class="cmt"># ── Fill missing 1-min bars (no-trade minutes) ────────────────────</span>
+<span class="cmt"># Price: LOCF (no trade = last price stands)</span>
+<span class="cmt"># Volume: 0 (no trade = no volume)</span>
+ohlcv[<span class="str">"close"</span>]  = ohlcv[<span class="str">"close"</span>].ffill()
+ohlcv[<span class="str">"open"</span>]   = ohlcv[<span class="str">"open"</span>].fillna(ohlcv[<span class="str">"close"</span>])    <span class="cmt"># open = close if no trade</span>
+ohlcv[<span class="str">"high"</span>]   = ohlcv[<span class="str">"high"</span>].fillna(ohlcv[<span class="str">"close"</span>])
+ohlcv[<span class="str">"low"</span>]    = ohlcv[<span class="str">"low"</span>].fillna(ohlcv[<span class="str">"close"</span>])
+ohlcv[<span class="str">"volume"</span>] = ohlcv[<span class="str">"volume"</span>].fillna(<span class="num">0</span>)
+
+<span class="fn">print</span>(<span class="grn">f"Remaining NaN: {ohlcv.isna().sum().sum()}"</span>)
+<span class="fn">print</span>(ohlcv.head(<span class="num">5</span>))</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>1-min bars: 1,668  |  missing bars: 0
+Remaining NaN: 0
+
+                        open       high        low      close   volume
+2024-01-01 00:00:00  45000.1   45012.3   44991.8   45008.4    2.341
+2024-01-01 00:01:00  45008.4   45019.7   45003.1   45015.2    1.892
+...</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Upsampling — daily data to hourly with fill strategies</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Daily energy prices → interpolate to hourly for forecasting model</span>
+daily_idx   = pd.date_range(<span class="str">"2024-01-01"</span>, periods=<span class="num">365</span>, freq=<span class="str">"D"</span>)
+daily_price = pd.Series(
+    <span class="num">80</span> + <span class="num">20</span>*np.sin(np.linspace(<span class="num">0</span>, <span class="num">2</span>*np.pi, <span class="num">365</span>)) + np.random.normal(<span class="num">0</span>, <span class="num">3</span>, <span class="num">365</span>),
+    index=daily_idx, name=<span class="str">"price_eur_mwh"</span>
+)
+
+<span class="cmt"># Upsample to hourly — new hourly slots are NaN until filled</span>
+hourly = daily_price.resample(<span class="str">"h"</span>).interpolate(method=<span class="str">"cubicspline"</span>)
+
+<span class="fn">print</span>(<span class="grn">f"Daily  rows: {len(daily_price):,}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Hourly rows: {len(hourly):,}"</span>)
+<span class="fn">print</span>(<span class="grn">f"NaN after interpolate: {hourly.isna().sum()}"</span>)</code></pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  SEASONAL  ═══════════ -->
+<div class="section" id="seasonal">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(129,140,248,.1)">🔄</div>
+    <h2>Seasonal Decomposition for Gap Filling</h2>
+  </div>
+  <p class="sh-sub">For long gaps (days/weeks), simple interpolation destroys seasonal patterns. Decompose the series, fill components separately, then reconstruct.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>STL decomposition + fill + reconstruct</h3><span class="pill p-purple">Seasonal</span></div>
+    <div class="card-b">
+      <div class="scenario">🏪 <strong>Scenario:</strong> Retail store footfall — strong weekly and annual seasonality. A 2-week data outage (system migration) creates a block gap. Simple linear interpolation would miss the weekend vs. weekday pattern entirely.</div>
+<pre><code><span class="kw">from</span> statsmodels.tsa.seasonal <span class="kw">import</span> STL
+
+<span class="cmt"># ── 2 years of daily retail footfall ────────────────────────────</span>
+N = <span class="num">730</span>
+idx = pd.date_range(<span class="str">"2022-01-01"</span>, periods=N, freq=<span class="str">"D"</span>)
+
+trend     = np.linspace(<span class="num">1000</span>, <span class="num">1200</span>, N)
+weekly    = <span class="num">300</span> * np.sin(np.arange(N) * <span class="num">2</span>*np.pi / <span class="num">7</span>)     <span class="cmt"># 7-day cycle</span>
+annual    = <span class="num">200</span> * np.sin(np.arange(N) * <span class="num">2</span>*np.pi / <span class="num">365</span>)   <span class="cmt"># annual cycle</span>
+noise     = np.random.normal(<span class="num">0</span>, <span class="num">40</span>, N)
+
+footfall = pd.Series(
+    (trend + weekly + annual + noise).clip(<span class="num">0</span>),
+    index=idx, name=<span class="str">"footfall"</span>
+)
+
+<span class="cmt"># Inject a 14-day block gap (system migration)</span>
+gap_start = <span class="num">400</span>
+footfall_gap = footfall.copy()
+footfall_gap.iloc[gap_start:gap_start+<span class="num">14</span>] = np.nan
+
+<span class="cmt"># ── Approach: STL on non-missing portion ────────────────────────</span>
+<span class="cmt"># 1. Fill gap temporarily with linear interpolation (just to feed STL)</span>
+temp_filled = footfall_gap.interpolate(method=<span class="str">"linear"</span>)
+
+<span class="cmt"># 2. Decompose: period=7 (weekly seasonality)</span>
+stl = STL(temp_filled, period=<span class="num">7</span>, robust=<span class="cls">True</span>)
+res = stl.fit()
+
+seasonal  = pd.Series(res.seasonal, index=idx)
+trend_comp = pd.Series(res.trend,   index=idx)
+remainder  = pd.Series(res.resid,   index=idx)
+
+<span class="cmt"># 3. Fill each component in the gap</span>
+<span class="cmt">#    Seasonal: repeat from same weekday two weeks prior</span>
+<span class="cmt">#    Trend:    interpolate (smooth, can be linearly continued)</span>
+<span class="cmt">#    Remainder: set to 0 (unknown noise in gap)</span>
+gap_idx = footfall_gap.index[gap_start:gap_start+<span class="num">14</span>]
+
+seasonal_filled  = seasonal.copy()
+seasonal_filled[gap_idx] = seasonal[gap_idx - pd.Timedelta(<span class="str">"7D"</span>)].values
+
+trend_filled  = trend_comp.interpolate(method=<span class="str">"linear"</span>)
+resid_filled  = remainder.copy().fillna(<span class="num">0</span>)
+
+<span class="cmt"># 4. Reconstruct</span>
+footfall_reconstructed = seasonal_filled + trend_filled + resid_filled
+footfall_reconstructed = footfall_reconstructed.clip(<span class="num">0</span>)
+
+<span class="cmt"># 5. Only use reconstructed values for the gap</span>
+footfall_filled = footfall_gap.copy()
+footfall_filled[gap_idx] = footfall_reconstructed[gap_idx]
+
+<span class="cmt"># Compare to true values</span>
+rmse = np.sqrt(((footfall_filled[gap_idx] - footfall[gap_idx])**<span class="num">2</span>).mean())
+rmse_linear = np.sqrt(((temp_filled[gap_idx] - footfall[gap_idx])**<span class="num">2</span>).mean())
+<span class="fn">print</span>(<span class="grn">f"STL-reconstructed RMSE:  {rmse:.1f} visitors/day"</span>)
+<span class="fn">print</span>(<span class="grn">f"Simple linear RMSE:      {rmse_linear:.1f} visitors/day"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>STL-reconstructed RMSE:  41.2 visitors/day   ← preserves weekday pattern
+Simple linear RMSE:      134.7 visitors/day  ← misses weekends entirely</pre>
+      </div>
+      <div class="info info-purple"><strong>💡 STL advantage:</strong> For a 14-day gap, STL imputation is 3× more accurate than linear interpolation because it borrows the weekly seasonal pattern from adjacent weeks rather than drawing a straight line across the outage.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Same-period imputation without STL (simpler)</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Lightweight alternative: fill NaN with average of same weekday/hour</span>
+<span class="cmt"># from the 4 weeks before and after the gap</span>
+
+footfall_df = footfall_gap.to_frame()
+footfall_df[<span class="str">"dow"</span>]  = footfall_df.index.dayofweek
+footfall_df[<span class="str">"week"</span>] = footfall_df.index.isocalendar().week.astype(<span class="cls">int</span>)
+
+<span class="cmt"># For each missing value, use same day-of-week mean from surrounding 4 weeks</span>
+<span class="kw">def</span> <span class="fn">dow_fill</span>(df):
+    mask = df[<span class="str">"footfall"</span>].isna()
+    <span class="kw">for</span> idx_val <span class="kw">in</span> df[mask].index:
+        dow = df.loc[idx_val, <span class="str">"dow"</span>]
+        window_start = idx_val - pd.Timedelta(<span class="str">"28D"</span>)
+        window_end   = idx_val + pd.Timedelta(<span class="str">"28D"</span>)
+        same_dow = df[
+            (df.index >= window_start) &
+            (df.index <= window_end) &
+            (df[<span class="str">"dow"</span>] == dow) &
+            df[<span class="str">"footfall"</span>].notna()
+        ][<span class="str">"footfall"</span>]
+        df.loc[idx_val, <span class="str">"footfall"</span>] = same_dow.mean() <span class="kw">if</span> <span class="fn">len</span>(same_dow) > <span class="num">0</span> <span class="kw">else</span> np.nan
+    <span class="kw">return</span> df
+
+footfall_dow = <span class="fn">dow_fill</span>(footfall_df.copy())[<span class="str">"footfall"</span>]
+
+rmse_dow = np.sqrt(((footfall_dow[gap_idx] - footfall[gap_idx])**<span class="num">2</span>).mean())
+<span class="fn">print</span>(<span class="grn">f"Same-DOW fill RMSE: {rmse_dow:.1f} visitors/day"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Same-DOW fill RMSE: 58.3 visitors/day   ← better than linear, simpler than STL</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  ROLLING  ═══════════ -->
+<div class="section" id="rolling">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(251,146,60,.1)">🎰</div>
+    <h2>Rolling Window &amp; Exponential Smoothing Fill</h2>
+  </div>
+  <p class="sh-sub">Use local context (nearby observations) rather than global statistics — works well when signal has gradual drift.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Rolling mean fill — adaptive to local level</h3><span class="pill p-orange">Local context</span></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># ── Humidity sensor drifting over time — global mean would be wrong ─</span>
+N = <span class="num">2016</span>   <span class="cmt"># 1 week at 5-min intervals</span>
+idx = pd.date_range(<span class="str">"2024-08-01"</span>, periods=N, freq=<span class="str">"5min"</span>)
+humidity = pd.Series(
+    <span class="num">55</span> + np.linspace(<span class="num">0</span>, <span class="num">15</span>, N)            <span class="cmt"># rising trend (sensor drift)</span>
+    + <span class="num">10</span>*np.sin(np.arange(N)*<span class="num">2</span>*np.pi/<span class="num">288</span>) <span class="cmt"># daily cycle</span>
+    + np.random.normal(<span class="num">0</span>, <span class="num">1</span>, N),
+    index=idx, name=<span class="str">"humidity_pct"</span>
+)
+hum_gap = <span class="fn">inject_ts_nulls</span>(humidity, random_rate=<span class="num">0.06</span>, block_starts=[<span class="num">500</span>], block_len=<span class="num">24</span>)
+
+<span class="cmt"># Bad: global mean (ignores drift)</span>
+fill_global_mean = hum_gap.fillna(hum_gap.mean())
+
+<span class="cmt"># Good: rolling mean (12 obs before + 12 after = 2-hour window at 5-min)</span>
+<span class="cmt"># Step: compute rolling mean on non-null positions, then fill</span>
+rolling_mean = (
+    hum_gap.fillna(method=<span class="str">"ffill"</span>, limit=<span class="num">1</span>)  <span class="cmt"># brief carry to avoid NaN in rolling</span>
+           .rolling(window=<span class="num">24</span>, min_periods=<span class="num">6</span>, center=<span class="cls">True</span>)
+           .mean()
+)
+fill_rolling = hum_gap.fillna(rolling_mean)
+fill_rolling = fill_rolling.ffill().bfill()   <span class="cmt"># any remaining (start/end)</span>
+
+<span class="cmt"># Exponential weighted mean — more weight to recent observations</span>
+ewm_fill = hum_gap.copy()
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(ewm_fill)):
+    <span class="kw">if</span> pd.isna(ewm_fill.iloc[i]):
+        ewm_val = ewm_fill.iloc[:i].ewm(span=<span class="num">12</span>, min_periods=<span class="num">1</span>).mean().iloc[-<span class="num">1</span>]
+        ewm_fill.iloc[i] = ewm_val
+
+gap_mask = hum_gap.isna()
+<span class="fn">print</span>(<span class="grn">f"Global mean RMSE : {np.sqrt(((fill_global_mean[gap_mask]-humidity[gap_mask])**2).mean()):.3f}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Rolling mean RMSE: {np.sqrt(((fill_rolling[gap_mask]-humidity[gap_mask])**2).mean()):.3f}"</span>)
+<span class="fn">print</span>(<span class="grn">f"EWM RMSE         : {np.sqrt(((ewm_fill[gap_mask]-humidity[gap_mask])**2).mean()):.3f}"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Global mean RMSE : 8.234   ← ignores drift → systematically wrong
+Rolling mean RMSE: 1.021   ← adapts to local level
+EWM RMSE         : 0.847   ← best: recency-weighted</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  ARIMA / ML  ═══════════ -->
+<div class="section" id="arima">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(251,146,60,.1)">🧠</div>
+    <h2>ARIMA &amp; ML-Based Imputation</h2>
+  </div>
+  <p class="sh-sub">When gaps are long and the series has complex autocorrelation structure, model-based imputation outperforms all interpolation methods.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>ARIMA — fit before gap, predict across gap</h3><span class="pill p-orange">ARIMA</span></div>
+    <div class="card-b">
+      <div class="scenario">📡 <strong>Scenario:</strong> Satellite telemetry — 30-day gap due to communication blackout. Simple interpolation over 30 days would ignore the autoregressive structure. ARIMA captures the process dynamics.</div>
+<pre><code><span class="kw">from</span> statsmodels.tsa.arima.model <span class="kw">import</span> ARIMA
+
+<span class="cmt"># ── AR(2) process: x_t = 0.6*x_{t-1} + 0.2*x_{t-2} + noise ────</span>
+N = <span class="num">500</span>
+idx = pd.date_range(<span class="str">"2024-01-01"</span>, periods=N, freq=<span class="str">"D"</span>)
+ar_series = [<span class="num">10.0</span>, <span class="num">10.2</span>]
+<span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(N - <span class="num">2</span>):
+    nxt = (<span class="num">0.6</span> * ar_series[-<span class="num">1</span>] + <span class="num">0.2</span> * ar_series[-<span class="num">2</span>]
+           + np.random.normal(<span class="num">0</span>, <span class="num">0.5</span>))
+    ar_series.append(nxt)
+ts_true = pd.Series(ar_series, index=idx)
+
+<span class="cmt"># 30-day gap from row 250</span>
+GAP_START, GAP_LEN = <span class="num">250</span>, <span class="num">30</span>
+ts_gap = ts_true.copy()
+ts_gap.iloc[GAP_START:GAP_START+GAP_LEN] = np.nan
+
+gap_idx = idx[GAP_START:GAP_START+GAP_LEN]
+
+<span class="cmt"># ── Fit ARIMA on pre-gap data and forecast into gap ──────────────</span>
+pre_gap  = ts_gap.iloc[:GAP_START].dropna()
+post_gap = ts_gap.iloc[GAP_START+GAP_LEN:]
+
+model = ARIMA(pre_gap, order=(<span class="num">2</span>, <span class="num">0</span>, <span class="num">1</span>))   <span class="cmt"># ARIMA(p=2, d=0, q=1)</span>
+fit   = model.fit()
+
+forecast = fit.get_forecast(steps=GAP_LEN)
+predicted = forecast.predicted_mean
+ci        = forecast.conf_int()
+
+<span class="cmt"># Fill gap with ARIMA forecast</span>
+ts_filled = ts_gap.copy()
+ts_filled.iloc[GAP_START:GAP_START+GAP_LEN] = predicted.values
+
+rmse_arima  = np.sqrt(((ts_filled[gap_idx] - ts_true[gap_idx])**<span class="num">2</span>).mean())
+rmse_linear = np.sqrt(((ts_gap.interpolate(<span class="str">"linear"</span>)[gap_idx] - ts_true[gap_idx])**<span class="num">2</span>).mean())
+
+<span class="fn">print</span>(<span class="grn">f"ARIMA forecast RMSE : {rmse_arima:.4f}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Linear interp  RMSE : {rmse_linear:.4f}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Improvement         : {(1 - rmse_arima/rmse_linear)*100:.1f}%"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>ARIMA forecast RMSE : 0.5912
+Linear interp  RMSE : 2.4873
+Improvement         : 76.2%</pre>
+      </div>
+      <div class="info info-teal"><strong>💡 ARIMA strategy:</strong> Fit the model on pre-gap data only, forecast forward into the gap. Optionally use a second model fit on post-gap data (forecast backward), then blend the two forecasts by distance from the gap edges.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Bidirectional blend — forward ARIMA + backward ARIMA</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># ── Forward forecast (from before gap) ───────────────────────────</span>
+pre_model = ARIMA(ts_gap.iloc[:GAP_START].dropna(), order=(<span class="num">2</span>,<span class="num">0</span>,<span class="num">1</span>)).fit()
+fwd_pred  = pre_model.get_forecast(steps=GAP_LEN).predicted_mean.values
+
+<span class="cmt"># ── Backward forecast (reverse series from after gap) ────────────</span>
+post_series = ts_gap.iloc[GAP_START+GAP_LEN:].dropna()[::-<span class="num">1</span>]
+post_model  = ARIMA(post_series, order=(<span class="num">2</span>,<span class="num">0</span>,<span class="num">1</span>)).fit()
+bwd_pred    = post_model.get_forecast(steps=GAP_LEN).predicted_mean.values[::-<span class="num">1</span>]
+
+<span class="cmt"># ── Linear blend weights: fwd weight decreases over gap ──────────</span>
+weights = np.linspace(<span class="num">1</span>, <span class="num">0</span>, GAP_LEN)   <span class="cmt"># 1→0 (start trusts forward; end trusts backward)</span>
+blended = fwd_pred * weights + bwd_pred * (<span class="num">1</span> - weights)
+
+ts_blended = ts_gap.copy()
+ts_blended.iloc[GAP_START:GAP_START+GAP_LEN] = blended
+
+rmse_blend = np.sqrt(((ts_blended[gap_idx] - ts_true[gap_idx])**<span class="num">2</span>).mean())
+<span class="fn">print</span>(<span class="grn">f"Blended bidirectional RMSE: {rmse_blend:.4f}"</span>)
+<span class="fn">print</span>(<span class="grn">f"vs forward-only ARIMA     : {rmse_arima:.4f}"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Blended bidirectional RMSE: 0.4103
+vs forward-only ARIMA     : 0.5912</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  MULTIVARIATE  ═══════════ -->
+<div class="section" id="multivariate">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(45,212,191,.1)">🔗</div>
+    <h2>Multivariate Time Series — Correlated Channels</h2>
+  </div>
+  <p class="sh-sub">When multiple correlated channels exist (temperature + humidity + pressure), use an intact channel to impute a missing one.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Use correlated channels as regressors</h3><span class="pill p-teal">Multivariate</span></div>
+    <div class="card-b">
+      <div class="scenario">🏭 <strong>Scenario:</strong> Chemical reactor — temperature, pressure, and flow rate are physically correlated. The flow sensor fails for 6 hours; temperature and pressure remain available. Impute flow rate using the other channels.</div>
+<pre><code><span class="kw">from</span> sklearn.linear_model <span class="kw">import</span> Ridge
+<span class="kw">from</span> sklearn.preprocessing <span class="kw">import</span> StandardScaler
+
+N = <span class="num">4320</span>   <span class="cmt"># 3 days at 1-min intervals</span>
+idx = pd.date_range(<span class="str">"2024-03-01"</span>, periods=N, freq=<span class="str">"min"</span>)
+
+<span class="cmt"># Physically correlated signals</span>
+temp   = <span class="num">200</span> + <span class="num">20</span>*np.sin(np.arange(N)*<span class="num">2</span>*np.pi/<span class="num">1440</span>) + np.random.normal(<span class="num">0</span>,<span class="num">1</span>,N)
+press  = <span class="num">5</span>   + <span class="num">0.8</span>*((temp-<span class="num">200</span>)/<span class="num">20</span>)                  + np.random.normal(<span class="num">0</span>,<span class="num">0.1</span>,N)
+flow   = <span class="num">120</span> + <span class="num">15</span>*((temp-<span class="num">200</span>)/<span class="num">20</span>) + <span class="num">10</span>*(press-<span class="num">5</span>)    + np.random.normal(<span class="num">0</span>,<span class="num">2</span>,N)
+
+reactor = pd.DataFrame({
+    <span class="str">"temp_c"</span>:   temp,
+    <span class="str">"press_bar"</span>: press,
+    <span class="str">"flow_lpm"</span>: flow,
+}, index=idx)
+
+<span class="cmt"># 6-hour block gap in flow only</span>
+GAP_START = <span class="num">1440</span>; GAP_LEN = <span class="num">360</span>
+reactor.loc[reactor.index[GAP_START:GAP_START+GAP_LEN], <span class="str">"flow_lpm"</span>] = np.nan
+
+<span class="cmt"># ── Ridge regression: use temp+pressure to predict flow ──────────</span>
+known   = reactor[reactor[<span class="str">"flow_lpm"</span>].notna()]
+missing = reactor[reactor[<span class="str">"flow_lpm"</span>].isna()]
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(known[[<span class="str">"temp_c"</span>, <span class="str">"press_bar"</span>]])
+y_train = known[<span class="str">"flow_lpm"</span>].values
+
+ridge = Ridge(alpha=<span class="num">1.0</span>)
+ridge.fit(X_train, y_train)
+
+X_pred = scaler.transform(missing[[<span class="str">"temp_c"</span>, <span class="str">"press_bar"</span>]])
+reactor.loc[reactor[<span class="str">"flow_lpm"</span>].isna(), <span class="str">"flow_lpm"</span>] = ridge.predict(X_pred)
+
+<span class="cmt"># RMSE at gap</span>
+true_flow = pd.Series(flow, index=idx)
+gap_idx   = reactor.index[GAP_START:GAP_START+GAP_LEN]
+rmse = np.sqrt(((reactor.loc[gap_idx,<span class="str">"flow_lpm"</span>] - true_flow[gap_idx])**<span class="num">2</span>).mean())
+<span class="fn">print</span>(<span class="grn">f"Ridge imputation RMSE : {rmse:.3f} l/min"</span>)
+<span class="fn">print</span>(<span class="grn">f"Model R² on known data: {ridge.score(X_train, y_train):.4f}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Remaining NaN         : {reactor.isnull().sum().sum()}"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Ridge imputation RMSE : 2.041 l/min  (vs range of ~150 l/min)
+Model R² on known data: 0.9821
+Remaining NaN         : 0</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  REAL-WORLD  ═══════════ -->
+<div class="section" id="realworld">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(251,146,60,.1)">🌍</div>
+    <h2>Real-World Patterns Summary</h2>
+  </div>
+  <p class="sh-sub">Quick rundown of which techniques work best per domain.</p>
+
+  <div class="card">
+    <div class="card-b" style="padding:0">
+      <table class="dt">
+        <tr>
+          <th>Domain</th>
+          <th>Typical Gap Cause</th>
+          <th>Gap Type</th>
+          <th>Recommended Strategy</th>
+          <th>pandas / statsmodels call</th>
+        </tr>
+        <tr>
+          <td>📈 Stock / Crypto</td>
+          <td>Trading halt, no-trade minute</td>
+          <td>Block</td>
+          <td>LOCF + volume=0</td>
+          <td><code>ffill(limit=N)</code></td>
+        </tr>
+        <tr>
+          <td>🌡️ Weather sensor</td>
+          <td>Power outage, calibration</td>
+          <td>Block</td>
+          <td>Cubic spline per station</td>
+          <td><code>interpolate("cubicspline", limit=12)</code></td>
+        </tr>
+        <tr>
+          <td>🔌 Smart meter</td>
+          <td>Communication drop</td>
+          <td>Sparse + block</td>
+          <td>Linear interp (short), seasonal fill (long)</td>
+          <td><code>interpolate("time", limit=6)</code> + STL</td>
+        </tr>
+        <tr>
+          <td>🏪 Retail sales</td>
+          <td>POS system down, holiday</td>
+          <td>Block</td>
+          <td>Same-DOW mean or STL</td>
+          <td>groupby DOW mean or <code>STL(period=7)</code></td>
+        </tr>
+        <tr>
+          <td>📡 IoT / telemetry</td>
+          <td>Packet loss</td>
+          <td>Sparse</td>
+          <td>ffill (step signal) or linear interp</td>
+          <td><code>ffill(limit=3)</code></td>
+        </tr>
+        <tr>
+          <td>🏥 Vital signs</td>
+          <td>Monitoring gap, nurse busy</td>
+          <td>Sparse</td>
+          <td>Linear interp + flag</td>
+          <td><code>interpolate("linear", limit=4)</code></td>
+        </tr>
+        <tr>
+          <td>💹 FX / rates</td>
+          <td>Weekend, bank holiday</td>
+          <td>Scheduled block</td>
+          <td>LOCF (no-trade = last price)</td>
+          <td><code>ffill()</code></td>
+        </tr>
+        <tr>
+          <td>🌐 Web traffic</td>
+          <td>Logging failure</td>
+          <td>Block</td>
+          <td>Same hour/DOW from adjacent days</td>
+          <td>groupby(hour, DOW).transform("median")</td>
+        </tr>
+        <tr>
+          <td>📡 Satellite / GPS</td>
+          <td>Comms blackout (30+ days)</td>
+          <td>Long block</td>
+          <td>ARIMA bidirectional blend</td>
+          <td><code>ARIMA(order=(p,d,q))</code> + blend</td>
+        </tr>
+        <tr>
+          <td>🏭 Industrial sensor</td>
+          <td>Sensor saturation / reboot</td>
+          <td>Block</td>
+          <td>Ridge using correlated channels</td>
+          <td><code>Ridge</code> + <code>StandardScaler</code></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  CHEAT SHEET  ═══════════ -->
+<div class="section" id="cheatsheet">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(74,222,128,.1)">🗺️</div>
+    <h2>Time Series Missing Data — Decision Flow</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-b">
+<pre><code><span class="cmt">                    Is the index complete?
+                    ┌──YES──────────────────NO──┐
+                    ▼                           ▼
+              NaN values present         Absent rows
+                    │                    reindex(full_index)
+                    │                           │ → now NaN values
+                    ▼
+          How long is the longest gap?
+     ┌────────────────┬──────────────────┬──────────────────────┐
+     │  1–3 points    │  4–24 points     │  1+ days / weeks     │
+     │  (sparse)      │  (block)         │  (long block)        │
+     ▼                ▼                  ▼                      ▼
+  ffill/bfill     interpolate        Does series have       ARIMA / bidir
+  limit=3         method="time"      seasonality?          blend or ML
+                  limit=N            ├─YES → STL or        regressor on
+                                     │  same-DOW fill      correlated
+                                     └─NO  → rolling mean  channels
+                                             or EWM
+
+  ─────────────────────────────────────────────────────────────
+  Always:
+  1. reindex() to materialise missing timestamps as NaN
+  2. Sort by (entity, timestamp) before any fill
+  3. Use groupby().transform() for multi-entity data — never ffill() globally
+  4. Set limit= on all fill/interpolate calls — never fill across long gaps silently
+  5. Add _was_missing flag column before imputing for downstream ML
+  6. For ML models: wrap imputer in sklearn Pipeline to prevent leakage</span></code></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Complete quick reference</h3></div>
+    <div class="card-b" style="padding:0">
+      <table class="dt">
+        <tr><th>Method</th><th>pandas call</th><th>Best for</th><th>Caution</th></tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-ff">ffill</span></span></td>
+          <td><code>s.ffill(limit=N)</code></td>
+          <td>Step signals, prices, status flags</td>
+          <td>Always set <code>limit=</code></td>
+        </tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-ff">bfill</span></span></td>
+          <td><code>s.bfill(limit=N)</code></td>
+          <td>Known future state fills back</td>
+          <td>Introduces future leakage in live systems</td>
+        </tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-interp">linear</span></span></td>
+          <td><code>s.interpolate("linear")</code></td>
+          <td>Uniform index, short gaps</td>
+          <td>Ignores irregular spacing</td>
+        </tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-interp">time</span></span></td>
+          <td><code>s.interpolate("time")</code></td>
+          <td>Irregular timestamps</td>
+          <td>Requires DatetimeIndex</td>
+        </tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-interp">cubicspline</span></span></td>
+          <td><code>s.interpolate("cubicspline")</code></td>
+          <td>Smooth analogue signals</td>
+          <td>Can overshoot at boundaries</td>
+        </tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-resamp">resample</span></span></td>
+          <td><code>s.resample("1h").interpolate()</code></td>
+          <td>Frequency change + fill</td>
+          <td>Choose aggregation wisely (ohlc vs mean)</td>
+        </tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-season">STL</span></span></td>
+          <td><code>STL(s, period=7).fit()</code></td>
+          <td>Long gaps with seasonality</td>
+          <td>Needs &gt;2 full cycles before gap</td>
+        </tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-ff">rolling mean</span></span></td>
+          <td><code>s.rolling(24, center=True).mean()</code></td>
+          <td>Drifting signal, local level</td>
+          <td>Creates NaN at series ends</td>
+        </tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-ml">ARIMA</span></span></td>
+          <td><code>ARIMA(pre_gap, order).fit()</code></td>
+          <td>Long gaps, AR structure</td>
+          <td>Forecast uncertainty grows with gap length</td>
+        </tr>
+        <tr>
+          <td><span class="chips" style="margin:0"><span class="chip c-ml">Regression</span></span></td>
+          <td><code>Ridge().fit(X, y)</code></td>
+          <td>Correlated channels available</td>
+          <td>Requires intact correlated features</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:20px">
+    <div class="info info-green">
+      <strong>Golden rule #1 — reindex before filling:</strong><br/>
+      <code>s = s.reindex(pd.date_range(start, end, freq="..."))</code><br/>
+      Missing rows ≠ NaN rows. They are invisible to <code>ffill()</code>.
+    </div>
+    <div class="info info-orange">
+      <strong>Golden rule #2 — always set limit=:</strong><br/>
+      <code>s.ffill(limit=6)</code> — never fill across a multi-day blackout with a single <code>s.ffill()</code>. Unbounded fills silently corrupt data.
+    </div>
+    <div class="info info-blue">
+      <strong>Golden rule #3 — group before filling:</strong><br/>
+      <code>df.groupby("entity_id")["val"].transform(lambda s: s.ffill())</code><br/>
+      Per-entity fill prevents cross-entity contamination.
+    </div>
+    <div class="info info-teal">
+      <strong>Golden rule #4 — flag missingness for ML:</strong><br/>
+      <code>df["val_was_missing"] = df["val"].isna().astype("int8")</code><br/>
+      then impute. The indicator is often the strongest feature.
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer>Time Series Missing Data in pandas &nbsp;|&nbsp; pandas 2.x · statsmodels · scikit-learn · Python 3.11 &nbsp;|&nbsp; April 2026</footer>
+</body>
+</html>

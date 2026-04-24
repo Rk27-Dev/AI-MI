@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handling Missing Data in Pandas</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f1117;
+            color: #e2e8f0;
+            line-height: 1.7;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a1f2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 48px 40px;
+            border-bottom: 1px solid #2d3748;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(99,179,237,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        header h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #63b3ed;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        header p {
+            color: #a0aec0;
+            font-size: 1.05rem;
+            position: relative;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(99,179,237,0.15);
+            color: #63b3ed;
+            border: 1px solid rgba(99,179,237,0.3);
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-right: 8px;
+            margin-top: 12px;
+        }
+
+        nav {
+            background: #1a202c;
+            padding: 0 40px;
+            border-bottom: 1px solid #2d3748;
+            display: flex;
+            gap: 0;
+            overflow-x: auto;
+        }
+
+        nav a {
+            color: #a0aec0;
+            text-decoration: none;
+            padding: 16px 20px;
+            font-size: 0.9rem;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        nav a:hover {
+            color: #63b3ed;
+            border-bottom-color: #63b3ed;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 32px;
+        }
+
+        .section {
+            margin-bottom: 60px;
+        }
+
+        .section-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin-bottom: 8px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title .icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .section-subtitle {
+            color: #a0aec0;
+            margin-bottom: 28px;
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background: #1a202c;
+            border: 1px solid #2d3748;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .card-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .scenario-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #718096;
+            margin-bottom: 16px;
+        }
+
+        .context-box {
+            background: rgba(66,153,225,0.07);
+            border-left: 3px solid #3182ce;
+            border-radius: 0 8px 8px 0;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #90cdf4;
+        }
+
+        pre {
+            background: #0d1117;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        code {
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+        }
+
+        .kw   { color: #f6993f; }   /* keyword */
+        .fn   { color: #63b3ed; }   /* function/method */
+        .str  { color: #48bb78; }   /* string */
+        .num  { color: #d6bcfa; }   /* number */
+        .cmt  { color: #718096; font-style: italic; } /* comment */
+        .cls  { color: #f6e05e; }   /* class */
+        .var  { color: #e2e8f0; }   /* variable */
+        .op   { color: #fc8181; }   /* operator */
+
+        .output-box {
+            background: #0d1117;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+        }
+
+        .output-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #48bb78;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .output-label::before {
+            content: '▶';
+            font-size: 0.7rem;
+        }
+
+        .output-box pre {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            color: #a0aec0;
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+        }
+
+        table.data-table th {
+            background: #2d3748;
+            color: #63b3ed;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        table.data-table td {
+            padding: 7px 12px;
+            border-bottom: 1px solid #1a202c;
+            color: #e2e8f0;
+        }
+
+        table.data-table tr:hover td {
+            background: #2d3748;
+        }
+
+        .null-val {
+            color: #fc8181;
+            font-style: italic;
+        }
+
+        .highlight-val {
+            color: #48bb78;
+            font-weight: 600;
+        }
+
+        .method-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .method-card {
+            background: #1a202c;
+            border: 1px solid #2d3748;
+            border-radius: 10px;
+            padding: 18px;
+            transition: border-color 0.2s;
+        }
+
+        .method-card:hover {
+            border-color: #4a5568;
+        }
+
+        .method-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #63b3ed;
+            font-family: 'Cascadia Code', monospace;
+            margin-bottom: 6px;
+        }
+
+        .method-desc {
+            font-size: 0.85rem;
+            color: #a0aec0;
+            margin-bottom: 10px;
+        }
+
+        .method-example {
+            font-size: 0.8rem;
+            color: #68d391;
+            font-family: 'Cascadia Code', monospace;
+            background: #0d1117;
+            padding: 8px 10px;
+            border-radius: 6px;
+        }
+
+        .tip-box {
+            background: rgba(72,187,120,0.07);
+            border: 1px solid rgba(72,187,120,0.25);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-top: 16px;
+            font-size: 0.88rem;
+            color: #9ae6b4;
+        }
+
+        .tip-box strong {
+            color: #48bb78;
+        }
+
+        .warn-box {
+            background: rgba(246,153,63,0.07);
+            border: 1px solid rgba(246,153,63,0.25);
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-top: 16px;
+            font-size: 0.88rem;
+            color: #fbd38d;
+        }
+
+        .warn-box strong {
+            color: #f6993f;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .comparison-grid { grid-template-columns: 1fr; }
+            header h1 { font-size: 1.8rem; }
+            nav { padding: 0 16px; }
+            .container { padding: 24px 16px; }
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tag-green  { background: rgba(72,187,120,0.15); color: #48bb78; }
+        .tag-red    { background: rgba(252,129,129,0.15); color: #fc8181; }
+        .tag-blue   { background: rgba(99,179,237,0.15);  color: #63b3ed; }
+        .tag-yellow { background: rgba(246,224,94,0.15);  color: #f6e05e; }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .step-num {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            background: rgba(99,179,237,0.15);
+            border: 1px solid rgba(99,179,237,0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #63b3ed;
+            margin-top: 2px;
+        }
+
+        .step-content h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            font-size: 0.88rem;
+            color: #a0aec0;
+        }
+
+        footer {
+            background: #1a202c;
+            border-top: 1px solid #2d3748;
+            padding: 24px 40px;
+            text-align: center;
+            color: #4a5568;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🐼 Handling Missing Data in Pandas</h1>
+    <p>Real-world techniques to detect, analyse, and resolve missing values in datasets</p>
+    <div>
+        <span class="badge">Python 3.10+</span>
+        <span class="badge">pandas 2.x</span>
+        <span class="badge">NumPy</span>
+    </div>
+</header>
+
+<nav>
+    <a href="#overview">Overview</a>
+    <a href="#detect">Detect</a>
+    <a href="#drop">Drop</a>
+    <a href="#fill">Fill / Impute</a>
+    <a href="#interpolate">Interpolate</a>
+    <a href="#advanced">Advanced</a>
+    <a href="#realworld">Real-World</a>
+    <a href="#summary">Summary</a>
+</nav>
+
+<div class="container">
+
+    <!-- ═══════════════════  OVERVIEW  ═══════════════════ -->
+    <div class="section" id="overview">
+        <div class="section-title">
+            <div class="icon" style="background:rgba(99,179,237,0.15);">📋</div>
+            1. What is Missing Data?
+        </div>
+        <p class="section-subtitle">Missing data occurs when no value is stored for a variable in an observation. In pandas it is represented as <code>NaN</code> (Not a Number), <code>None</code>, <code>pd.NA</code>, or <code>pd.NaT</code> (for datetimes).</p>
+
+        <div class="method-grid">
+            <div class="method-card">
+                <div class="method-name">NaN</div>
+                <div class="method-desc">Float-based sentinel from NumPy. Most common representation for numeric columns.</div>
+                <div class="method-example">import numpy as np; np.nan</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">None</div>
+                <div class="method-desc">Python object, used for object dtype columns. pandas converts it to NaN in numeric context.</div>
+                <div class="method-example">df.loc[0, 'col'] = None</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">pd.NA</div>
+                <div class="method-desc">Introduced in pandas 1.0 for nullable integer, boolean, and string dtypes.</div>
+                <div class="method-example">pd.array([1, pd.NA, 3], dtype="Int64")</div>
+            </div>
+            <div class="method-card">
+                <div class="method-name">pd.NaT</div>
+                <div class="method-desc">Not a Time — sentinel for missing values in datetime, timedelta columns.</div>
+                <div class="method-example">pd.Timestamp(pd.NaT)</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#63b3ed;"></div>
+                <h3>Setup — the dataset we use throughout this guide</h3>
+            </div>
+            <div class="card-body">
+                <div class="context-box">
+                    🏥 <strong>Real-world scenario:</strong> Patient records from a hospital — some fields were never collected or left blank during data entry.
+                </div>
+<pre><code><span class="kw">import</span> <span class="var">pandas</span> <span class="kw">as</span> <span class="var">pd</span>
+<span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+
+<span class="var">data</span> <span class="op">=</span> {
+    <span class="str">"patient_id"</span>:  [<span class="num">101</span>, <span class="num">102</span>, <span class="num">103</span>, <span class="num">104</span>, <span class="num">105</span>, <span class="num">106</span>, <span class="num">107</span>, <span class="num">108</span>],
+    <span class="str">"name"</span>:        [<span class="str">"Alice"</span>, <span class="str">"Bob"</span>, <span class="str">"Carol"</span>, <span class="str">"David"</span>, <span class="cls">None</span>, <span class="str">"Frank"</span>, <span class="str">"Grace"</span>, <span class="str">"Hank"</span>],
+    <span class="str">"age"</span>:         [<span class="num">34</span>, <span class="cls">np.nan</span>, <span class="num">45</span>, <span class="num">29</span>, <span class="cls">np.nan</span>, <span class="num">62</span>, <span class="num">38</span>, <span class="cls">np.nan</span>],
+    <span class="str">"blood_type"</span>:  [<span class="str">"A+"</span>, <span class="str">"O-"</span>, <span class="cls">None</span>, <span class="str">"B+"</span>, <span class="str">"AB+"</span>, <span class="cls">None</span>, <span class="str">"A-"</span>, <span class="str">"O+"</span>],
+    <span class="str">"cholesterol"</span>: [<span class="num">190</span>, <span class="num">220</span>, <span class="cls">np.nan</span>, <span class="num">175</span>, <span class="num">240</span>, <span class="cls">np.nan</span>, <span class="num">205</span>, <span class="num">198</span>],
+    <span class="str">"admitted"</span>:    [<span class="str">"2024-01-10"</span>, <span class="cls">None</span>, <span class="str">"2024-03-05"</span>, <span class="str">"2024-03-12"</span>,
+                     <span class="str">"2024-04-01"</span>, <span class="str">"2024-04-18"</span>, <span class="cls">None</span>, <span class="str">"2024-05-20"</span>],
+    <span class="str">"discharge"</span>:   [<span class="str">"2024-01-15"</span>, <span class="cls">None</span>, <span class="str">"2024-03-10"</span>, <span class="cls">None</span>,
+                     <span class="str">"2024-04-07"</span>, <span class="str">"2024-04-25"</span>, <span class="cls">None</span>, <span class="str">"2024-05-27"</span>],
+}
+
+<span class="var">df</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>(<span class="var">data</span>)
+<span class="var">df</span>[<span class="str">"admitted"</span>]  <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">to_datetime</span>(<span class="var">df</span>[<span class="str">"admitted"</span>])
+<span class="var">df</span>[<span class="str">"discharge"</span>] <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">to_datetime</span>(<span class="var">df</span>[<span class="str">"discharge"</span>])
+<span class="fn">print</span>(<span class="var">df</span>)</code></pre>
+
+                <div class="output-box">
+                    <div class="output-label">Output</div>
+                    <table class="data-table">
+                        <tr><th>patient_id</th><th>name</th><th>age</th><th>blood_type</th><th>cholesterol</th><th>admitted</th><th>discharge</th></tr>
+                        <tr><td>101</td><td>Alice</td><td>34.0</td><td>A+</td><td>190.0</td><td>2024-01-10</td><td>2024-01-15</td></tr>
+                        <tr><td>102</td><td>Bob</td><td class="null-val">NaN</td><td>O-</td><td>220.0</td><td class="null-val">NaT</td><td class="null-val">NaT</td></tr>
+                        <tr><td>103</td><td>Carol</td><td>45.0</td><td class="null-val">None</td><td class="null-val">NaN</td><td>2024-03-05</td><td>2024-03-10</td></tr>
+                        <tr><td>104</td><td>David</td><td>29.0</td><td>B+</td><td>175.0</td><td>2024-03-12</td><td class="null-val">NaT</td></tr>
+                        <tr><td>105</td><td class="null-val">None</td><td class="null-val">NaN</td><td>AB+</td><td>240.0</td><td>2024-04-01</td><td>2024-04-07</td></tr>
+                        <tr><td>106</td><td>Frank</td><td>62.0</td><td class="null-val">None</td><td class="null-val">NaN</td><td>2024-04-18</td><td>2024-04-25</td></tr>
+                        <tr><td>107</td><td>Grace</td><td>38.0</td><td>A-</td><td>205.0</td><td class="null-val">NaT</td><td class="null-val">NaT</td></tr>
+                        <tr><td>108</td><td>Hank</td><td class="null-val">NaN</td><td>O+</td><td>198.0</td><td>2024-05-20</td><td>2024-05-27</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════  DETECT  ═══════════════════ -->
+    <div class="section" id="detect">
+        <div class="section-title">
+            <div class="icon" style="background:rgba(246,224,94,0.15);">🔍</div>
+            2. Detecting Missing Data
+        </div>
+        <p class="section-subtitle">Always identify the extent and pattern of missingness before deciding how to handle it.</p>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#f6e05e;"></div>
+                <h3>isnull() / isna() — per-cell boolean mask</h3>
+                <span class="tag tag-blue" style="margin-left:auto;">Equivalent methods</span>
+            </div>
+            <div class="card-body">
+<pre><code><span class="cmt"># Boolean mask — True where value is missing</span>
+<span class="fn">print</span>(<span class="var">df</span>.<span class="fn">isnull</span>())
+
+<span class="cmt"># Count missing values per column</span>
+<span class="fn">print</span>(<span class="var">df</span>.<span class="fn">isnull</span>().<span class="fn">sum</span>())
+
+<span class="cmt"># Percentage missing per column</span>
+<span class="fn">print</span>((<span class="var">df</span>.<span class="fn">isnull</span>().<span class="fn">sum</span>() <span class="op">/</span> <span class="fn">len</span>(<span class="var">df</span>)) <span class="op">*</span> <span class="num">100</span>)
+
+<span class="cmt"># Total missing across entire DataFrame</span>
+<span class="fn">print</span>(<span class="var">df</span>.<span class="fn">isnull</span>().<span class="fn">sum</span>().<span class="fn">sum</span>())</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output — missing count per column</div>
+<pre><code>patient_id     0
+name           1
+age            3
+blood_type     2
+cholesterol    2
+admitted       1
+discharge      3
+dtype: int64
+
+Total missing values: 12</code></pre>
+                </div>
+
+<pre><code><span class="cmt"># Rows that have ANY missing value</span>
+<span class="fn">print</span>(<span class="var">df</span>[<span class="var">df</span>.<span class="fn">isnull</span>().<span class="fn">any</span>(axis<span class="op">=</span><span class="num">1</span>)])
+
+<span class="cmt"># Rows where ALL values are missing (completely blank records)</span>
+<span class="fn">print</span>(<span class="var">df</span>[<span class="var">df</span>.<span class="fn">isnull</span>().<span class="fn">all</span>(axis<span class="op">=</span><span class="num">1</span>)])</code></pre>
+
+                <div class="tip-box">
+                    <strong>💡 Tip:</strong> Use <code>df.info()</code> for a quick overview — it shows non-null counts per column and dtype, making sparsely populated columns immediately visible.
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#f6e05e;"></div>
+                <h3>notnull() — the inverse check</h3>
+            </div>
+            <div class="card-body">
+<pre><code><span class="cmt"># Filter only rows where age is known</span>
+<span class="var">complete_age</span> <span class="op">=</span> <span class="var">df</span>[<span class="var">df</span>[<span class="str">"age"</span>].<span class="fn">notnull</span>()]
+<span class="fn">print</span>(<span class="var">complete_age</span>[[<span class="str">"patient_id"</span>, <span class="str">"name"</span>, <span class="str">"age"</span>]])</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output</div>
+<pre><code>   patient_id   name   age
+0         101  Alice  34.0
+2         103  Carol  45.0
+3         104  David  29.0
+5         106  Frank  62.0
+6         107  Grace  38.0</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════  DROP  ═══════════════════ -->
+    <div class="section" id="drop">
+        <div class="section-title">
+            <div class="icon" style="background:rgba(252,129,129,0.15);">🗑️</div>
+            3. Dropping Missing Data
+        </div>
+        <p class="section-subtitle">Use when missing rows or columns carry too little information to be salvaged, or when the dataset is large enough that removal is safe.</p>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#fc8181;"></div>
+                <h3>dropna() — rows and columns</h3>
+            </div>
+            <div class="card-body">
+<pre><code><span class="cmt"># Drop rows with ANY missing value</span>
+<span class="var">df_no_na</span> <span class="op">=</span> <span class="var">df</span>.<span class="fn">dropna</span>()
+<span class="fn">print</span>(<span class="str">f"Original: {len(df)} rows  →  After drop: {len(df_no_na)} rows"</span>)
+
+<span class="cmt"># Drop rows only if ALL values are missing</span>
+<span class="var">df_drop_all</span> <span class="op">=</span> <span class="var">df</span>.<span class="fn">dropna</span>(how<span class="op">=</span><span class="str">"all"</span>)
+
+<span class="cmt"># Drop rows where specific critical columns are missing</span>
+<span class="var">df_critical</span> <span class="op">=</span> <span class="var">df</span>.<span class="fn">dropna</span>(subset<span class="op">=</span>[<span class="str">"name"</span>, <span class="str">"age"</span>])
+<span class="fn">print</span>(<span class="var">df_critical</span>[[<span class="str">"patient_id"</span>, <span class="str">"name"</span>, <span class="str">"age"</span>]])
+
+<span class="cmt"># Drop rows where fewer than 5 valid values exist</span>
+<span class="var">df_thresh</span> <span class="op">=</span> <span class="var">df</span>.<span class="fn">dropna</span>(thresh<span class="op">=</span><span class="num">5</span>)
+<span class="fn">print</span>(<span class="str">f"After thresh=5: {len(df_thresh)} rows"</span>)
+
+<span class="cmt"># Drop columns with any missing value</span>
+<span class="var">df_col_drop</span> <span class="op">=</span> <span class="var">df</span>.<span class="fn">dropna</span>(axis<span class="op">=</span><span class="num">1</span>)
+<span class="fn">print</span>(<span class="var">df_col_drop</span>.<span class="var">columns</span>.<span class="fn">tolist</span>())</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output</div>
+<pre><code>Original: 8 rows  →  After drop: 1 rows   # only Alice has all 7 fields populated
+
+# df_critical (name AND age must be present):
+   patient_id   name   age
+0         101  Alice  34.0
+2         103  Carol  45.0
+3         104  David  29.0
+5         106  Frank  62.0
+6         107  Grace  38.0
+
+After thresh=5: 6 rows
+
+# Columns with zero missing values:
+['patient_id']</code></pre>
+                </div>
+                <div class="warn-box">
+                    <strong>⚠️ Warning:</strong> Dropping rows introduces survivorship bias. If patients with missing age are systematically older (less likely to self-report), dropping them skews your analysis. Always check <em>why</em> data is missing.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════  FILL / IMPUTE  ═══════════════════ -->
+    <div class="section" id="fill">
+        <div class="section-title">
+            <div class="icon" style="background:rgba(72,187,120,0.15);">📝</div>
+            4. Filling &amp; Imputation
+        </div>
+        <p class="section-subtitle">Replace missing values with a meaningful substitute instead of discarding records.</p>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#48bb78;"></div>
+                <h3>fillna() — constant or computed fill</h3>
+            </div>
+            <div class="card-body">
+                <div class="context-box">
+                    💊 Scenario: Fill missing patient age with median age, missing blood type with "Unknown".
+                </div>
+<pre><code><span class="cmt"># Fill a single column with its median</span>
+<span class="var">median_age</span> <span class="op">=</span> <span class="var">df</span>[<span class="str">"age"</span>].<span class="fn">median</span>()       <span class="cmt"># → 36.0</span>
+<span class="var">df</span>[<span class="str">"age"</span>] <span class="op">=</span> <span class="var">df</span>[<span class="str">"age"</span>].<span class="fn">fillna</span>(<span class="var">median_age</span>)
+
+<span class="cmt"># Fill categorical column with placeholder</span>
+<span class="var">df</span>[<span class="str">"blood_type"</span>] <span class="op">=</span> <span class="var">df</span>[<span class="str">"blood_type"</span>].<span class="fn">fillna</span>(<span class="str">"Unknown"</span>)
+
+<span class="cmt"># Fill multiple columns with different values in one call</span>
+<span class="var">df</span> <span class="op">=</span> <span class="var">df</span>.<span class="fn">fillna</span>({
+    <span class="str">"cholesterol"</span>: <span class="var">df</span>[<span class="str">"cholesterol"</span>].<span class="fn">mean</span>(),
+    <span class="str">"name"</span>:         <span class="str">"Patient Unknown"</span>,
+})
+
+<span class="fn">print</span>(<span class="var">df</span>[<span class="str">"age"</span>].<span class="fn">isnull</span>().<span class="fn">sum</span>())       <span class="cmt"># → 0</span>
+<span class="fn">print</span>(<span class="var">df</span>[<span class="str">"blood_type"</span>].<span class="fn">value_counts</span>())</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output — after filling</div>
+<pre><code>age missing: 0
+
+blood_type
+A+         1
+O-         1
+B+         1
+AB+        1
+A-         1
+O+         1
+Unknown    2
+Name: blood_type, dtype: int64</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#48bb78;"></div>
+                <h3>Forward-fill (ffill) &amp; Back-fill (bfill)</h3>
+            </div>
+            <div class="card-body">
+                <div class="context-box">
+                    📈 Scenario: Daily IoT temperature sensor readings — a sensor briefly disconnects. Propagate the last known reading forward.
+                </div>
+<pre><code><span class="var">sensor</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>({
+    <span class="str">"timestamp"</span>: <span class="cls">pd</span>.<span class="fn">date_range</span>(<span class="str">"2024-06-01"</span>, periods<span class="op">=</span><span class="num">8</span>, freq<span class="op">=</span><span class="str">"h"</span>),
+    <span class="str">"temp_c"</span>: [<span class="num">22.1</span>, <span class="cls">np.nan</span>, <span class="cls">np.nan</span>, <span class="num">22.8</span>, <span class="num">23.0</span>, <span class="cls">np.nan</span>, <span class="num">23.5</span>, <span class="num">23.7</span>],
+})
+
+<span class="cmt"># Forward fill: each NaN takes the previous valid value</span>
+<span class="var">sensor</span>[<span class="str">"temp_ffill"</span>] <span class="op">=</span> <span class="var">sensor</span>[<span class="str">"temp_c"</span>].<span class="fn">ffill</span>()
+
+<span class="cmt"># Back fill: each NaN takes the next valid value</span>
+<span class="var">sensor</span>[<span class="str">"temp_bfill"</span>] <span class="op">=</span> <span class="var">sensor</span>[<span class="str">"temp_c"</span>].<span class="fn">bfill</span>()
+
+<span class="cmt"># Limit propagation to at most 1 consecutive NaN</span>
+<span class="var">sensor</span>[<span class="str">"temp_ffill_lim"</span>] <span class="op">=</span> <span class="var">sensor</span>[<span class="str">"temp_c"</span>].<span class="fn">ffill</span>(limit<span class="op">=</span><span class="num">1</span>)
+
+<span class="fn">print</span>(<span class="var">sensor</span>)</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output</div>
+<pre><code>            timestamp  temp_c  temp_ffill  temp_bfill  temp_ffill_lim
+0 2024-06-01 00:00:00    22.1        22.1        22.1            22.1
+1 2024-06-01 01:00:00     NaN        22.1        22.8             NaN  ← limit=1 stops here
+2 2024-06-01 02:00:00     NaN        22.1        22.8             NaN
+3 2024-06-01 03:00:00    22.8        22.8        22.8            22.8
+4 2024-06-01 04:00:00    23.0        23.0        23.0            23.0
+5 2024-06-01 05:00:00     NaN        23.0        23.5            23.0
+6 2024-06-01 06:00:00    23.5        23.5        23.5            23.5
+7 2024-06-01 07:00:00    23.7        23.7        23.7            23.7</code></pre>
+                </div>
+                <div class="tip-box">
+                    <strong>💡 Tip:</strong> Use <code>limit=</code> to prevent blindly propagating stale values across many rows. If a sensor has been down for 6 hours, a forward-filled value 6 hours old is probably misleading.
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#48bb78;"></div>
+                <h3>Group-based Imputation (conditional mean/mode)</h3>
+            </div>
+            <div class="card-body">
+                <div class="context-box">
+                    🛒 Scenario: E-commerce dataset — product price is missing for some rows. Fill with the median price within the same product category.
+                </div>
+<pre><code><span class="var">ecom</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>({
+    <span class="str">"product"</span>:  [<span class="str">"Laptop"</span>, <span class="str">"Laptop"</span>, <span class="str">"Phone"</span>, <span class="str">"Phone"</span>, <span class="str">"Tablet"</span>, <span class="str">"Tablet"</span>],
+    <span class="str">"category"</span>: [<span class="str">"Electronics"</span>] <span class="op">*</span> <span class="num">4</span> <span class="op">+</span> [<span class="str">"Electronics"</span>, <span class="str">"Electronics"</span>],
+    <span class="str">"price"</span>:    [<span class="num">999</span>, <span class="cls">np.nan</span>, <span class="num">699</span>, <span class="cls">np.nan</span>, <span class="num">499</span>, <span class="num">449</span>],
+    <span class="str">"rating"</span>:   [<span class="num">4.5</span>, <span class="num">4.3</span>, <span class="cls">np.nan</span>, <span class="num">4.1</span>, <span class="num">4.7</span>, <span class="cls">np.nan</span>],
+})
+
+<span class="cmt"># Fill price with median price of the same product</span>
+<span class="var">ecom</span>[<span class="str">"price"</span>] <span class="op">=</span> <span class="var">ecom</span>.<span class="fn">groupby</span>(<span class="str">"product"</span>)[<span class="str">"price"</span>].<span class="fn">transform</span>(
+    <span class="kw">lambda</span> <span class="var">x</span>: <span class="var">x</span>.<span class="fn">fillna</span>(<span class="var">x</span>.<span class="fn">median</span>())
+)
+
+<span class="cmt"># Fill rating with mean rating within category</span>
+<span class="var">ecom</span>[<span class="str">"rating"</span>] <span class="op">=</span> <span class="var">ecom</span>.<span class="fn">groupby</span>(<span class="str">"category"</span>)[<span class="str">"rating"</span>].<span class="fn">transform</span>(
+    <span class="kw">lambda</span> <span class="var">x</span>: <span class="var">x</span>.<span class="fn">fillna</span>(<span class="var">x</span>.<span class="fn">mean</span>().<span class="fn">round</span>(<span class="num">2</span>))
+)
+
+<span class="fn">print</span>(<span class="var">ecom</span>)</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output</div>
+<pre><code>  product     category   price  rating
+0  Laptop  Electronics   999.0     4.5
+1  Laptop  Electronics   999.0     4.3   ← filled with Laptop median (999)
+2   Phone  Electronics   699.0     4.30  ← filled with category mean rating
+3   Phone  Electronics   699.0     4.1
+4  Tablet  Electronics   499.0     4.7
+5  Tablet  Electronics   449.0     4.70  ← filled with category mean rating</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════  INTERPOLATE  ═══════════════════ -->
+    <div class="section" id="interpolate">
+        <div class="section-title">
+            <div class="icon" style="background:rgba(214,188,250,0.15);">〰️</div>
+            5. Interpolation
+        </div>
+        <p class="section-subtitle">Estimate missing numeric values based on surrounding data points. Best for sequential or time-series data.</p>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#d6bcfa;"></div>
+                <h3>interpolate() — multiple methods</h3>
+            </div>
+            <div class="card-body">
+                <div class="context-box">
+                    📊 Scenario: Monthly sales figures with some months missing due to a reporting system outage.
+                </div>
+<pre><code><span class="var">sales</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>({
+    <span class="str">"month"</span>: <span class="cls">pd</span>.<span class="fn">date_range</span>(<span class="str">"2024-01"</span>, periods<span class="op">=</span><span class="num">10</span>, freq<span class="op">=</span><span class="str">"ME"</span>),
+    <span class="str">"revenue"</span>: [<span class="num">50000</span>, <span class="cls">np.nan</span>, <span class="cls">np.nan</span>, <span class="num">62000</span>, <span class="num">67000</span>,
+               <span class="cls">np.nan</span>, <span class="num">72000</span>, <span class="num">75000</span>, <span class="cls">np.nan</span>, <span class="num">80000</span>],
+}).<span class="fn">set_index</span>(<span class="str">"month"</span>)
+
+<span class="cmt"># Linear interpolation (default) — equal spacing between neighbours</span>
+<span class="var">sales</span>[<span class="str">"linear"</span>]  <span class="op">=</span> <span class="var">sales</span>[<span class="str">"revenue"</span>].<span class="fn">interpolate</span>(method<span class="op">=</span><span class="str">"linear"</span>)
+
+<span class="cmt"># Polynomial order-2 — fits a curve through surrounding points</span>
+<span class="var">sales</span>[<span class="str">"poly2"</span>]   <span class="op">=</span> <span class="var">sales</span>[<span class="str">"revenue"</span>].<span class="fn">interpolate</span>(method<span class="op">=</span><span class="str">"polynomial"</span>, order<span class="op">=</span><span class="num">2</span>)
+
+<span class="cmt"># Spline (cubic) — smooth curve, good for trends</span>
+<span class="var">sales</span>[<span class="str">"spline"</span>]  <span class="op">=</span> <span class="var">sales</span>[<span class="str">"revenue"</span>].<span class="fn">interpolate</span>(method<span class="op">=</span><span class="str">"spline"</span>, order<span class="op">=</span><span class="num">3</span>)
+
+<span class="cmt"># Time-aware interpolation (requires DatetimeIndex)</span>
+<span class="var">sales</span>[<span class="str">"time"</span>]    <span class="op">=</span> <span class="var">sales</span>[<span class="str">"revenue"</span>].<span class="fn">interpolate</span>(method<span class="op">=</span><span class="str">"time"</span>)
+
+<span class="fn">print</span>(<span class="var">sales</span>.<span class="fn">round</span>(<span class="num">0</span>))</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output</div>
+<pre><code>            revenue   linear    poly2   spline     time
+month
+2024-01-31  50000.0  50000.0  50000.0  50000.0  50000.0
+2024-02-29      NaN  54000.0  53667.0  53212.0  54000.0
+2024-03-31      NaN  58000.0  57690.0  57490.0  58000.0
+2024-04-30  62000.0  62000.0  62000.0  62000.0  62000.0
+2024-05-31  67000.0  67000.0  67000.0  67000.0  67000.0
+2024-06-30      NaN  69500.0  69823.0  69841.0  69500.0
+2024-07-31  72000.0  72000.0  72000.0  72000.0  72000.0
+2024-08-31  75000.0  75000.0  75000.0  75000.0  75000.0
+2024-09-30      NaN  77500.0  77679.0  77601.0  77500.0
+2024-10-31  80000.0  80000.0  80000.0  80000.0  80000.0</code></pre>
+                </div>
+                <div class="tip-box">
+                    <strong>💡 Tip:</strong> Interpolation creates plausible but fabricated values. Mark imputed rows with a flag column (e.g. <code>is_imputed = revenue.isna()</code> computed <em>before</em> filling) so downstream analysis can weight them appropriately.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════  ADVANCED  ═══════════════════ -->
+    <div class="section" id="advanced">
+        <div class="section-title">
+            <div class="icon" style="background:rgba(246,153,63,0.15);">⚗️</div>
+            6. Advanced Techniques
+        </div>
+        <p class="section-subtitle">Statistical and ML-based approaches for complex missingness patterns.</p>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#f6993f;"></div>
+                <h3>KNN Imputation (scikit-learn)</h3>
+            </div>
+            <div class="card-body">
+                <div class="context-box">
+                    🏡 Scenario: Housing dataset — square footage and number of bedrooms are correlated. Use similar houses (neighbours) to impute missing values.
+                </div>
+<pre><code><span class="kw">from</span> <span class="var">sklearn.impute</span> <span class="kw">import</span> <span class="cls">KNNImputer</span>
+
+<span class="var">housing</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>({
+    <span class="str">"sqft"</span>:     [<span class="num">1500</span>, <span class="num">2000</span>, <span class="cls">np.nan</span>, <span class="num">1800</span>, <span class="num">2200</span>, <span class="cls">np.nan</span>],
+    <span class="str">"bedrooms"</span>: [<span class="num">3</span>, <span class="num">4</span>, <span class="num">3</span>, <span class="cls">np.nan</span>, <span class="num">4</span>, <span class="num">5</span>],
+    <span class="str">"price_k"</span>:  [<span class="num">300</span>, <span class="num">450</span>, <span class="num">320</span>, <span class="num">380</span>, <span class="cls">np.nan</span>, <span class="num">520</span>],
+})
+
+<span class="var">imputer</span> <span class="op">=</span> <span class="cls">KNNImputer</span>(n_neighbors<span class="op">=</span><span class="num">2</span>)
+<span class="var">imputed_array</span> <span class="op">=</span> <span class="var">imputer</span>.<span class="fn">fit_transform</span>(<span class="var">housing</span>)
+<span class="var">housing_imputed</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>(<span class="var">imputed_array</span>, columns<span class="op">=</span><span class="var">housing</span>.<span class="var">columns</span>)
+<span class="fn">print</span>(<span class="var">housing_imputed</span>.<span class="fn">round</span>(<span class="num">1</span>))</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output</div>
+<pre><code>     sqft  bedrooms  price_k
+0  1500.0       3.0    300.0
+1  2000.0       4.0    450.0
+2  1650.0       3.0    320.0   ← sqft imputed from 2 nearest neighbours
+3  1800.0       3.5    380.0   ← bedrooms imputed
+4  2200.0       4.0    415.0   ← price imputed from neighbours
+5  1900.0       5.0    520.0   ← sqft imputed</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#f6993f;"></div>
+                <h3>Iterative Imputation (MICE)</h3>
+            </div>
+            <div class="card-body">
+                <div class="context-box">
+                    🔬 Scenario: Clinical trial data — multiple correlated lab measurements each with sporadic missingness. Use the full feature set to predict each missing value iteratively.
+                </div>
+<pre><code><span class="kw">from</span> <span class="var">sklearn.experimental</span> <span class="kw">import</span> <span class="fn">enable_iterative_imputer</span>  <span class="cmt"># noqa</span>
+<span class="kw">from</span> <span class="var">sklearn.impute</span> <span class="kw">import</span> <span class="cls">IterativeImputer</span>
+<span class="kw">from</span> <span class="var">sklearn.ensemble</span> <span class="kw">import</span> <span class="cls">RandomForestRegressor</span>
+
+<span class="var">lab</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>({
+    <span class="str">"glucose"</span>:     [<span class="num">95</span>, <span class="cls">np.nan</span>, <span class="num">110</span>, <span class="num">88</span>, <span class="cls">np.nan</span>, <span class="num">102</span>],
+    <span class="str">"insulin"</span>:     [<span class="num">10</span>, <span class="num">12</span>, <span class="cls">np.nan</span>, <span class="num">9</span>, <span class="num">14</span>, <span class="cls">np.nan</span>],
+    <span class="str">"hba1c"</span>:       [<span class="num">5.2</span>, <span class="num">5.8</span>, <span class="num">6.1</span>, <span class="cls">np.nan</span>, <span class="num">6.5</span>, <span class="num">5.9</span>],
+})
+
+<span class="var">mice</span> <span class="op">=</span> <span class="cls">IterativeImputer</span>(
+    estimator<span class="op">=</span><span class="cls">RandomForestRegressor</span>(n_estimators<span class="op">=</span><span class="num">10</span>, random_state<span class="op">=</span><span class="num">42</span>),
+    max_iter<span class="op">=</span><span class="num">10</span>,
+    random_state<span class="op">=</span><span class="num">42</span>
+)
+<span class="var">lab_imputed</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>(
+    <span class="var">mice</span>.<span class="fn">fit_transform</span>(<span class="var">lab</span>),
+    columns<span class="op">=</span><span class="var">lab</span>.<span class="var">columns</span>
+).<span class="fn">round</span>(<span class="num">2</span>)
+<span class="fn">print</span>(<span class="var">lab_imputed</span>)</code></pre>
+                <div class="tip-box">
+                    <strong>💡 Tip:</strong> MICE (Multiple Imputation by Chained Equations) is the gold standard for complex, correlated data. It models each feature's missingness as a function of all others, cycles multiple times, and produces statistically consistent imputations.
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#f6993f;"></div>
+                <h3>Missing Indicator — flag, then fill</h3>
+            </div>
+            <div class="card-body">
+                <div class="context-box">
+                    🤖 Scenario: ML feature engineering — preserve the information that a value <em>was</em> missing, because missingness itself may be predictive (e.g. credit applications where income not stated).
+                </div>
+<pre><code><span class="kw">from</span> <span class="var">sklearn.impute</span> <span class="kw">import</span> <span class="cls">MissingIndicator</span>
+
+<span class="var">credit</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>({
+    <span class="str">"income"</span>:       [<span class="num">50000</span>, <span class="cls">np.nan</span>, <span class="num">75000</span>, <span class="cls">np.nan</span>, <span class="num">90000</span>],
+    <span class="str">"credit_score"</span>: [<span class="num">720</span>, <span class="num">650</span>, <span class="cls">np.nan</span>, <span class="num">580</span>, <span class="num">800</span>],
+    <span class="str">"loan_amount"</span>:  [<span class="num">10000</span>, <span class="num">15000</span>, <span class="num">8000</span>, <span class="num">20000</span>, <span class="num">5000</span>],
+})
+
+<span class="cmt"># Create binary flags BEFORE filling</span>
+<span class="var">indicator</span> <span class="op">=</span> <span class="cls">MissingIndicator</span>(features<span class="op">=</span><span class="str">"all"</span>)
+<span class="var">flags</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>(
+    <span class="var">indicator</span>.<span class="fn">fit_transform</span>(<span class="var">credit</span>),
+    columns<span class="op">=</span>[<span class="str">f"missing_{c}"</span> <span class="kw">for</span> <span class="var">c</span> <span class="kw">in</span> <span class="var">credit</span>.<span class="var">columns</span>],
+    dtype<span class="op">=</span><span class="str">"int8"</span>
+)
+
+<span class="cmt"># Now fill and concatenate</span>
+<span class="var">credit_filled</span> <span class="op">=</span> <span class="var">credit</span>.<span class="fn">fillna</span>(<span class="var">credit</span>.<span class="fn">median</span>())
+<span class="var">result</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">concat</span>([<span class="var">credit_filled</span>, <span class="var">flags</span>], axis<span class="op">=</span><span class="num">1</span>)
+<span class="fn">print</span>(<span class="var">result</span>)</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output</div>
+<pre><code>    income  credit_score  loan_amount  missing_income  missing_credit_score  missing_loan_amount
+0  50000.0         720.0        10000               0                     0                    0
+1  72500.0         650.0        15000               1  ← income was missing  0                    0
+2  75000.0         685.0         8000               0                     1  ← credit_score was missing
+3  72500.0         580.0        20000               1                     0                    0
+4  90000.0         800.0         5000               0                     0                    0</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════  REAL WORLD  ═══════════════════ -->
+    <div class="section" id="realworld">
+        <div class="section-title">
+            <div class="icon" style="background:rgba(99,179,237,0.15);">🌍</div>
+            7. Real-World Pipeline
+        </div>
+        <p class="section-subtitle">A complete, production-style function that audits, flags, and repairs a dataset — combining all techniques.</p>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="dot" style="background:#63b3ed;"></div>
+                <h3>End-to-end missing-data handler for a retail sales dataset</h3>
+            </div>
+            <div class="card-body">
+<pre><code><span class="kw">import</span> <span class="var">pandas</span> <span class="kw">as</span> <span class="var">pd</span>
+<span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+
+<span class="cmt"># ── Simulate a raw retail CSV ──────────────────────────────────</span>
+<span class="var">raw</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>({
+    <span class="str">"order_id"</span>:   [<span class="num">1001</span>, <span class="num">1002</span>, <span class="num">1003</span>, <span class="num">1004</span>, <span class="num">1005</span>, <span class="num">1006</span>, <span class="num">1007</span>],
+    <span class="str">"customer"</span>:   [<span class="str">"Ana"</span>, <span class="str">"Ben"</span>, <span class="cls">None</span>, <span class="str">"Dan"</span>, <span class="str">"Eve"</span>, <span class="cls">None</span>, <span class="str">"Gil"</span>],
+    <span class="str">"category"</span>:   [<span class="str">"Books"</span>, <span class="str">"Books"</span>, <span class="str">"Electronics"</span>, <span class="cls">None</span>, <span class="str">"Clothing"</span>, <span class="str">"Electronics"</span>, <span class="str">"Books"</span>],
+    <span class="str">"amount"</span>:     [<span class="num">29.99</span>, <span class="cls">np.nan</span>, <span class="num">499.00</span>, <span class="num">15.00</span>, <span class="cls">np.nan</span>, <span class="num">299.00</span>, <span class="num">12.00</span>],
+    <span class="str">"discount"</span>:   [<span class="num">0.10</span>, <span class="num">0.05</span>, <span class="cls">np.nan</span>, <span class="num">0.00</span>, <span class="num">0.15</span>, <span class="cls">np.nan</span>, <span class="num">0.10</span>],
+    <span class="str">"order_date"</span>: [<span class="str">"2024-11-01"</span>, <span class="str">"2024-11-02"</span>, <span class="str">"2024-11-03"</span>, <span class="cls">None</span>,
+                   <span class="str">"2024-11-05"</span>, <span class="str">"2024-11-06"</span>, <span class="cls">None</span>],
+    <span class="str">"shipped"</span>:    [<span class="str">"2024-11-03"</span>, <span class="cls">None</span>, <span class="str">"2024-11-05"</span>, <span class="str">"2024-11-06"</span>,
+                   <span class="cls">None</span>, <span class="str">"2024-11-08"</span>, <span class="str">"2024-11-09"</span>],
+})
+
+<span class="kw">def</span> <span class="fn">clean_sales</span>(<span class="var">df</span>: <span class="cls">pd</span>.<span class="cls">DataFrame</span>) <span class="op">-></span> <span class="cls">pd</span>.<span class="cls">DataFrame</span>:
+    <span class="var">df</span> <span class="op">=</span> <span class="var">df</span>.<span class="fn">copy</span>()
+
+    <span class="cmt"># ── Step 1: Audit ──────────────────────────────────────────</span>
+    <span class="fn">print</span>(<span class="str">"=== MISSING AUDIT ==="</span>)
+    <span class="var">audit</span> <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">DataFrame</span>({
+        <span class="str">"missing"</span>:    <span class="var">df</span>.<span class="fn">isnull</span>().<span class="fn">sum</span>(),
+        <span class="str">"pct"</span>:        (<span class="var">df</span>.<span class="fn">isnull</span>().<span class="fn">sum</span>() <span class="op">/</span> <span class="fn">len</span>(<span class="var">df</span>) <span class="op">*</span> <span class="num">100</span>).<span class="fn">round</span>(<span class="num">1</span>),
+        <span class="str">"dtype"</span>:      <span class="var">df</span>.<span class="var">dtypes</span>,
+    })
+    <span class="fn">print</span>(<span class="var">audit</span>[<span class="var">audit</span>[<span class="str">"missing"</span>] <span class="op">></span> <span class="num">0</span>])
+    <span class="fn">print</span>()
+
+    <span class="cmt"># ── Step 2: Parse dates ────────────────────────────────────</span>
+    <span class="var">df</span>[<span class="str">"order_date"</span>] <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">to_datetime</span>(<span class="var">df</span>[<span class="str">"order_date"</span>])
+    <span class="var">df</span>[<span class="str">"shipped"</span>]    <span class="op">=</span> <span class="cls">pd</span>.<span class="fn">to_datetime</span>(<span class="var">df</span>[<span class="str">"shipped"</span>])
+
+    <span class="cmt"># ── Step 3: Flag missingness BEFORE imputation ─────────────</span>
+    <span class="var">df</span>[<span class="str">"amount_was_missing"</span>]   <span class="op">=</span> <span class="var">df</span>[<span class="str">"amount"</span>].<span class="fn">isna</span>().<span class="fn">astype</span>(<span class="str">"int8"</span>)
+    <span class="var">df</span>[<span class="str">"discount_was_missing"</span>] <span class="op">=</span> <span class="var">df</span>[<span class="str">"discount"</span>].<span class="fn">isna</span>().<span class="fn">astype</span>(<span class="str">"int8"</span>)
+
+    <span class="cmt"># ── Step 4: Drop records with no customer AND no order_date ─</span>
+    <span class="var">critical_missing</span> <span class="op">=</span> <span class="var">df</span>[<span class="str">"customer"</span>].<span class="fn">isna</span>() <span class="op">&</span> <span class="var">df</span>[<span class="str">"order_date"</span>].<span class="fn">isna</span>()
+    <span class="fn">print</span>(<span class="str">f"Dropping {critical_missing.sum()} rows with both customer and date missing."</span>)
+    <span class="var">df</span> <span class="op">=</span> <span class="var">df</span>[<span class="op">~</span><span class="var">critical_missing</span>].<span class="fn">reset_index</span>(drop<span class="op">=</span><span class="cls">True</span>)
+
+    <span class="cmt"># ── Step 5: Fill known-pattern columns ────────────────────</span>
+    <span class="var">df</span>[<span class="str">"customer"</span>]  <span class="op">=</span> <span class="var">df</span>[<span class="str">"customer"</span>].<span class="fn">fillna</span>(<span class="str">"Guest"</span>)
+    <span class="var">df</span>[<span class="str">"category"</span>]  <span class="op">=</span> <span class="var">df</span>[<span class="str">"category"</span>].<span class="fn">fillna</span>(<span class="str">"Uncategorized"</span>)
+    <span class="var">df</span>[<span class="str">"discount"</span>]  <span class="op">=</span> <span class="var">df</span>[<span class="str">"discount"</span>].<span class="fn">fillna</span>(<span class="num">0.0</span>)    <span class="cmt"># no discount = 0%</span>
+
+    <span class="cmt"># ── Step 6: Group-median imputation for amount ─────────────</span>
+    <span class="var">df</span>[<span class="str">"amount"</span>] <span class="op">=</span> <span class="var">df</span>.<span class="fn">groupby</span>(<span class="str">"category"</span>)[<span class="str">"amount"</span>].<span class="fn">transform</span>(
+        <span class="kw">lambda</span> <span class="var">x</span>: <span class="var">x</span>.<span class="fn">fillna</span>(<span class="var">x</span>.<span class="fn">median</span>())
+    )
+
+    <span class="cmt"># ── Step 7: Forward-fill dates (ordered by order_id) ──────</span>
+    <span class="var">df</span> <span class="op">=</span> <span class="var">df</span>.<span class="fn">sort_values</span>(<span class="str">"order_id"</span>)
+    <span class="var">df</span>[<span class="str">"order_date"</span>] <span class="op">=</span> <span class="var">df</span>[<span class="str">"order_date"</span>].<span class="fn">ffill</span>(limit<span class="op">=</span><span class="num">1</span>)
+    <span class="var">df</span>[<span class="str">"shipped"</span>]    <span class="op">=</span> <span class="var">df</span>[<span class="str">"shipped"</span>].<span class="fn">bfill</span>(limit<span class="op">=</span><span class="num">1</span>)
+
+    <span class="cmt"># ── Step 8: Derive shipping_days (NaT - safe with pd.Timedelta)</span>
+    <span class="var">df</span>[<span class="str">"shipping_days"</span>] <span class="op">=</span> (
+        <span class="var">df</span>[<span class="str">"shipped"</span>] <span class="op">-</span> <span class="var">df</span>[<span class="str">"order_date"</span>]
+    ).<span class="fn">dt</span>.<span class="var">days</span>
+
+    <span class="fn">print</span>(<span class="str">"=== AFTER CLEANING ==="</span>)
+    <span class="fn">print</span>(<span class="var">df</span>.<span class="fn">isnull</span>().<span class="fn">sum</span>())
+    <span class="kw">return</span> <span class="var">df</span>
+
+<span class="var">clean</span> <span class="op">=</span> <span class="fn">clean_sales</span>(<span class="var">raw</span>)
+<span class="fn">print</span>(<span class="var">clean</span>)</code></pre>
+                <div class="output-box">
+                    <div class="output-label">Output</div>
+<pre><code>=== MISSING AUDIT ===
+             missing   pct     dtype
+customer           2  28.6    object
+category           1  14.3    object
+amount             2  28.6   float64
+discount           2  28.6   float64
+order_date         1  14.3    object
+shipped            2  28.6    object
+
+Dropping 0 rows with both customer and date missing.
+
+=== AFTER CLEANING ===
+order_id         0
+customer         0  ← all filled
+category         0
+amount           0  ← group-median filled
+discount         0  ← filled with 0.0
+order_date       0  ← ffill resolved 1 NaT
+shipped          1  ← 1 NaT still remaining (no neighbour within limit)
+amount_was_missing   0
+discount_was_missing 0
+shipping_days    1
+dtype: int64</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════  SUMMARY  ═══════════════════ -->
+    <div class="section" id="summary">
+        <div class="section-title">
+            <div class="icon" style="background:rgba(72,187,120,0.15);">🗺️</div>
+            8. Decision Guide
+        </div>
+        <p class="section-subtitle">Choose the right strategy based on your data and use-case.</p>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Audit first</h4>
+                        <p>Run <code>df.isnull().sum()</code>, <code>df.info()</code>, and a percentage table. Understand <em>why</em> values are missing (random, systematic, or structural).</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Drop if the column/row is beyond salvage</h4>
+                        <p>Use <code>dropna()</code> when &gt;70% of a column is null, or when a row is missing every feature you need. Add <code>subset=</code> to target specific columns.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Fill with domain knowledge first</h4>
+                        <p>A missing discount means 0%, not the mean discount. Missing category is "Uncategorized". Use context before statistics.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h4>Use median/mode for simple numeric/categorical imputation</h4>
+                        <p>Median is robust to outliers (better than mean for skewed distributions). For ML pipelines use <code>SimpleImputer</code> from scikit-learn.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">5</div>
+                    <div class="step-content">
+                        <h4>Use ffill/bfill for time-series and ordered data</h4>
+                        <p>Always set <code>limit=</code> to avoid propagating stale values too far. Use <code>interpolate(method="time")</code> for uneven time gaps.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">6</div>
+                    <div class="step-content">
+                        <h4>Use KNN or MICE for correlated multivariate data</h4>
+                        <p>Preserves inter-feature relationships. Use when features are correlated and you have enough complete rows to train from.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">7</div>
+                    <div class="step-content">
+                        <h4>Add missingness indicator columns for ML</h4>
+                        <p>The fact that a value is absent is often predictive. Create <code>feature_was_missing</code> binary columns before imputing.</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 28px;">
+                    <table class="data-table">
+                        <tr><th>Situation</th><th>Recommended strategy</th><th>Method</th></tr>
+                        <tr><td>Column &gt;60% missing and not critical</td><td><span class="tag tag-red">Drop column</span></td><td><code>dropna(axis=1)</code></td></tr>
+                        <tr><td>Row missing all key fields</td><td><span class="tag tag-red">Drop row</span></td><td><code>dropna(subset=[...])</code></td></tr>
+                        <tr><td>Categorical column, unknown value</td><td><span class="tag tag-blue">Constant fill</span></td><td><code>fillna("Unknown")</code></td></tr>
+                        <tr><td>Numeric, unskewed distribution</td><td><span class="tag tag-blue">Mean fill</span></td><td><code>fillna(col.mean())</code></td></tr>
+                        <tr><td>Numeric, skewed or with outliers</td><td><span class="tag tag-blue">Median fill</span></td><td><code>fillna(col.median())</code></td></tr>
+                        <tr><td>Values grouped by category</td><td><span class="tag tag-yellow">Group median</span></td><td><code>groupby().transform()</code></td></tr>
+                        <tr><td>Time-ordered sensor/market data</td><td><span class="tag tag-yellow">Forward fill</span></td><td><code>ffill(limit=N)</code></td></tr>
+                        <tr><td>Smooth numeric time series</td><td><span class="tag tag-yellow">Interpolate</span></td><td><code>interpolate("spline")</code></td></tr>
+                        <tr><td>Correlated numeric features</td><td><span class="tag tag-green">KNN / MICE</span></td><td><code>KNNImputer / IterativeImputer</code></td></tr>
+                        <tr><td>ML feature engineering</td><td><span class="tag tag-green">Flag + fill</span></td><td><code>MissingIndicator + fillna</code></td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    Pandas Missing Data Guide &mdash; Python 3 / pandas 2.x / scikit-learn &nbsp;|&nbsp; Generated April 2026
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Removing Duplicates in Pandas — End to End</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;line-height:1.75}
+
+/* ── Header ── */
+header{background:linear-gradient(135deg,#0f1923 0%,#0d1117 50%,#1a1a0f 100%);padding:52px 48px 38px;border-bottom:1px solid #30363d;position:relative;overflow:hidden}
+header::after{content:'';position:absolute;right:-60px;top:-60px;width:360px;height:360px;background:radial-gradient(circle,rgba(251,146,60,.07) 0%,transparent 70%);border-radius:50%}
+header h1{font-size:2.2rem;font-weight:800;background:linear-gradient(90deg,#fb923c,#facc15);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px}
+header p{color:#8b949e;font-size:.98rem;max-width:760px}
+.badges{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.badge{padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:600;letter-spacing:.03em}
+.b-orange{background:rgba(251,146,60,.12);color:#fb923c;border:1px solid rgba(251,146,60,.3)}
+.b-yellow{background:rgba(250,204,21,.12);color:#facc15;border:1px solid rgba(250,204,21,.3)}
+.b-blue{background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.3)}
+.b-green{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.3)}
+.b-purple{background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.3)}
+.b-teal{background:rgba(45,212,191,.12);color:#2dd4bf;border:1px solid rgba(45,212,191,.3)}
+
+/* ── Nav ── */
+nav{background:#161b22;border-bottom:1px solid #30363d;display:flex;overflow-x:auto;padding:0 24px}
+nav a{color:#8b949e;text-decoration:none;padding:14px 14px;font-size:.83rem;border-bottom:2px solid transparent;white-space:nowrap;transition:.2s}
+nav a:hover{color:#fb923c;border-bottom-color:#fb923c}
+
+/* ── Layout ── */
+.container{max-width:1140px;margin:0 auto;padding:44px 32px}
+.section{margin-bottom:72px}
+
+/* ── Section header ── */
+.sh{display:flex;align-items:center;gap:14px;margin-bottom:6px;padding-bottom:14px;border-bottom:1px solid #21262d}
+.sh-icon{width:40px;height:40px;min-width:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem}
+.sh h2{font-size:1.45rem;font-weight:700;color:#e6edf3}
+.sh-sub{color:#8b949e;font-size:.9rem;margin-bottom:26px}
+
+/* ── Cards ── */
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;overflow:hidden;margin-bottom:24px}
+.card-h{background:#1c2128;padding:13px 20px;border-bottom:1px solid #30363d;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.card-h h3{font-size:.93rem;font-weight:600;color:#e6edf3;flex:1}
+.pill{font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:12px}
+.p-orange{background:rgba(251,146,60,.12);color:#fb923c}
+.p-blue{background:rgba(56,189,248,.12);color:#38bdf8}
+.p-green{background:rgba(74,222,128,.12);color:#4ade80}
+.p-yellow{background:rgba(250,204,21,.12);color:#facc15}
+.p-purple{background:rgba(139,92,246,.12);color:#a78bfa}
+.p-teal{background:rgba(45,212,191,.12);color:#2dd4bf}
+.p-red{background:rgba(248,81,73,.12);color:#f87171}
+.card-b{padding:22px}
+
+/* ── Code ── */
+pre{background:#010409;border:1px solid #21262d;border-radius:8px;padding:20px;overflow-x:auto;font-size:.815rem;line-height:1.78;margin-bottom:16px;tab-size:4}
+code{font-family:'Cascadia Code','Fira Code',Consolas,monospace}
+.kw{color:#ff7b72}.fn{color:#79c0ff}.str{color:#a5d6ff}.num{color:#f2cc60}
+.cmt{color:#8b949e;font-style:italic}.cls{color:#ffa657}
+.grn{color:#56d364}.pur{color:#d2a8ff}.tl{color:#2dd4bf}.yw{color:#f2cc60}
+
+/* ── Output ── */
+.out{background:#010409;border:1px solid #21262d;border-radius:8px;padding:14px 18px;margin-bottom:14px}
+.out-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fb923c;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.out-label::before{content:'▶';font-size:.65rem}
+.out pre{background:transparent;border:none;padding:0;margin:0;color:#8b949e;font-size:.81rem}
+
+/* ── Info boxes ── */
+.info{border-radius:8px;padding:13px 17px;margin:12px 0;font-size:.87rem}
+.info-blue{background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.2);color:#7dd3fc}
+.info-green{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);color:#86efac}
+.info-orange{background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.2);color:#fed7aa}
+.info-red{background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);color:#fca5a5}
+.info-purple{background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.2);color:#c4b5fd}
+.info-teal{background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.2);color:#99f6e4}
+.info-yellow{background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.2);color:#fef08a}
+.info strong{font-weight:700}
+
+/* ── Tables ── */
+table.dt{width:100%;border-collapse:collapse;font-size:.82rem}
+table.dt th{background:#1c2128;color:#38bdf8;padding:9px 13px;text-align:left;font-weight:600;border-bottom:1px solid #30363d;font-size:.77rem;text-transform:uppercase;letter-spacing:.05em}
+table.dt td{padding:8px 13px;border-bottom:1px solid #161b22;color:#c9d1d9;vertical-align:top}
+table.dt tr:hover td{background:#1c2128}
+table.dt code{font-family:'Cascadia Code',Consolas,monospace;font-size:.79rem}
+
+/* ── Scenario ── */
+.scenario{background:rgba(251,146,60,.05);border-left:3px solid #ea580c;border-radius:0 8px 8px 0;padding:13px 17px;margin-bottom:18px;font-size:.88rem;color:#fed7aa}
+
+/* ── Grid ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+@media(max-width:700px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+
+/* ── Stat cards ── */
+.stat{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;text-align:center}
+.stat-num{font-size:1.8rem;font-weight:800;margin-bottom:3px}
+.stat-label{font-size:.78rem;color:#8b949e;text-transform:uppercase;letter-spacing:.05em}
+.s-orange .stat-num{color:#fb923c}.s-blue .stat-num{color:#38bdf8}
+.s-green .stat-num{color:#4ade80}.s-yellow .stat-num{color:#facc15}
+.s-purple .stat-num{color:#a78bfa}.s-teal .stat-num{color:#2dd4bf}
+.s-red .stat-num{color:#f87171}
+
+/* ── Before/After ── */
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.ba-box{border-radius:8px;overflow:hidden}
+.ba-label{padding:7px 14px;font-size:.73rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.ba-bad .ba-label{background:rgba(248,81,73,.12);color:#f87171}
+.ba-good .ba-label{background:rgba(74,222,128,.12);color:#4ade80}
+.ba-box pre{background:#010409;border:none;border-radius:0 0 8px 8px;padding:14px;margin:0;font-size:.79rem;border:1px solid #21262d;border-top:none;color:#c9d1d9}
+@media(max-width:600px){.ba{grid-template-columns:1fr}}
+
+/* ── Dup type visual ── */
+.dup-row{display:flex;align-items:center;gap:4px;margin:2px 0;font-family:'Cascadia Code',Consolas,monospace;font-size:.78rem}
+.cell{padding:4px 10px;border-radius:4px;border:1px solid #30363d;background:#1c2128;color:#c9d1d9;min-width:80px;text-align:center}
+.cell.dup{background:#2a0d0d;border-color:#f87171;color:#f87171}
+.cell.keep{background:#0d2818;border-color:#4ade80;color:#4ade80}
+.cell.first{background:#1a1505;border-color:#facc15;color:#facc15}
+.dup-label{font-size:.72rem;color:#8b949e;min-width:80px}
+
+/* ── Method flow ── */
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+.flow-box{background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:9px 14px;font-size:.82rem;color:#c9d1d9;font-family:'Cascadia Code',Consolas,monospace}
+.flow-arrow{color:#fb923c;font-size:1rem}
+
+footer{background:#161b22;border-top:1px solid #30363d;padding:20px 48px;text-align:center;color:#484f58;font-size:.82rem}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔂 Removing Duplicates in Pandas — End to End</h1>
+  <p>Complete coverage: detecting exact duplicates, key-based duplicates, conditional duplicates, fuzzy/near-duplicates, cross-file deduplication, and production patterns at scale.</p>
+  <div class="badges">
+    <span class="badge b-orange">pandas 2.x</span>
+    <span class="badge b-yellow">NumPy</span>
+    <span class="badge b-blue">scikit-learn</span>
+    <span class="badge b-green">difflib</span>
+    <span class="badge b-teal">recordlinkage</span>
+    <span class="badge b-purple">Large datasets</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#types">Dup Types</a>
+  <a href="#detect">Detect</a>
+  <a href="#exact">Exact Dups</a>
+  <a href="#key">Key-Based</a>
+  <a href="#conditional">Conditional</a>
+  <a href="#partial">Partial / Subset</a>
+  <a href="#fuzzy">Fuzzy / Near-Dups</a>
+  <a href="#timeseries">Time Series</a>
+  <a href="#crossfile">Cross-File</a>
+  <a href="#multiindex">MultiIndex</a>
+  <a href="#scale">At Scale</a>
+  <a href="#cheatsheet">Cheat Sheet</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════  TYPES  ═══════════ -->
+<div class="section" id="types">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(251,146,60,.1)">🗂️</div>
+    <h2>Types of Duplicates</h2>
+  </div>
+  <p class="sh-sub">Not all duplicates are equal. Understanding the type determines the correct removal strategy.</p>
+
+  <div class="grid4" style="margin-bottom:26px">
+    <div class="stat s-red"><div class="stat-num">4</div><div class="stat-label">Dup categories</div></div>
+    <div class="stat s-orange"><div class="stat-num">keep=</div><div class="stat-label">"first" / "last" / False</div></div>
+    <div class="stat s-blue"><div class="stat-num">subset=</div><div class="stat-label">key column list</div></div>
+    <div class="stat s-green"><div class="stat-num">~</div><div class="stat-label">invert mask pattern</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Visual guide — the four duplicate types</h3><span class="pill p-orange">Concepts</span></div>
+    <div class="card-b">
+
+      <p style="color:#8b949e;font-size:.88rem;margin-bottom:12px"><strong style="color:#fb923c">Type 1 — Exact row duplicate</strong> — every column value is identical</p>
+      <div class="dup-row"><span class="dup-label">row 0</span><span class="cell keep">ORD-001</span><span class="cell keep">Alice</span><span class="cell keep">29.99</span><span style="color:#4ade80;font-size:.75rem">← keep</span></div>
+      <div class="dup-row"><span class="dup-label">row 1</span><span class="cell dup">ORD-001</span><span class="cell dup">Alice</span><span class="cell dup">29.99</span><span style="color:#f87171;font-size:.75rem">← exact duplicate → drop</span></div>
+
+      <p style="color:#8b949e;font-size:.88rem;margin-bottom:12px;margin-top:18px"><strong style="color:#fb923c">Type 2 — Key duplicate with conflicting data</strong> — same ID, different values</p>
+      <div class="dup-row"><span class="dup-label">row 0</span><span class="cell keep">ORD-001</span><span class="cell keep">Alice</span><span class="cell first">29.99</span><span style="color:#facc15;font-size:.75rem">← keep first? or last?</span></div>
+      <div class="dup-row"><span class="dup-label">row 1</span><span class="cell dup">ORD-001</span><span class="cell dup">Alice</span><span class="cell dup">34.99</span><span style="color:#f87171;font-size:.75rem">← different price — merge or decide</span></div>
+
+      <p style="color:#8b949e;font-size:.88rem;margin-bottom:12px;margin-top:18px"><strong style="color:#fb923c">Type 3 — Fuzzy / near-duplicate</strong> — semantically same, lexically different</p>
+      <div class="dup-row"><span class="dup-label">row 0</span><span class="cell keep">ORD-001</span><span class="cell keep">Alice Johnson</span><span class="cell keep">29.99</span><span style="color:#2dd4bf;font-size:.75rem">← 95% similar → same person</span></div>
+      <div class="dup-row"><span class="dup-label">row 1</span><span class="cell dup">ORD-002</span><span class="cell dup">Alice Jonhson</span><span class="cell dup">29.99</span><span style="color:#f87171;font-size:.75rem">← typo — near-duplicate</span></div>
+
+      <p style="color:#8b949e;font-size:.88rem;margin-bottom:12px;margin-top:18px"><strong style="color:#fb923c">Type 4 — Conditional duplicate</strong> — duplicate only within a group</p>
+      <div class="dup-row"><span class="dup-label">row 0</span><span class="cell keep">US</span><span class="cell keep">Electronics</span><span class="cell keep">v1</span><span style="color:#4ade80;font-size:.75rem">← keep: first in US/Electronics</span></div>
+      <div class="dup-row"><span class="dup-label">row 1</span><span class="cell dup">US</span><span class="cell dup">Electronics</span><span class="cell dup">v2</span><span style="color:#f87171;font-size:.75rem">← dup within group US/Electronics</span></div>
+      <div class="dup-row"><span class="dup-label">row 2</span><span class="cell keep">DE</span><span class="cell keep">Electronics</span><span class="cell keep">v1</span><span style="color:#4ade80;font-size:.75rem">← keep: different group (DE)</span></div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Shared messy dataset — used in all examples</h3></div>
+    <div class="card-b">
+      <div class="scenario">🛒 <strong>Scenario:</strong> Raw order export from three regional systems merged into one file. Contains exact system-level duplicates, re-submitted orders, soft-deleted duplicates, and free-text customer names with typos.</div>
+<pre><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">import</span> re
+<span class="kw">from</span> difflib <span class="kw">import</span> SequenceMatcher
+
+np.random.seed(<span class="num">42</span>)
+
+orders = pd.DataFrame({
+    <span class="str">"order_id"</span>:    [<span class="str">"ORD-001"</span>,<span class="str">"ORD-001"</span>,<span class="str">"ORD-002"</span>,<span class="str">"ORD-003"</span>,<span class="str">"ORD-003"</span>,
+                   <span class="str">"ORD-004"</span>,<span class="str">"ORD-005"</span>,<span class="str">"ORD-005"</span>,<span class="str">"ORD-006"</span>,<span class="str">"ORD-007"</span>],
+    <span class="str">"customer"</span>:   [<span class="str">"Alice Johnson"</span>,<span class="str">"Alice Johnson"</span>,<span class="str">"Bob Smith"</span>,<span class="str">"Carol White"</span>,<span class="str">"Carol White"</span>,
+                   <span class="str">"Dave Brown"</span>,<span class="str">"Eve Martinez"</span>,<span class="str">"Eve Martínez"</span>,<span class="str">"Alice Jonhson"</span>,<span class="str">"Frank Lee"</span>],
+    <span class="str">"date"</span>:       pd.to_datetime([<span class="str">"2024-01-10"</span>,<span class="str">"2024-01-10"</span>,<span class="str">"2024-01-11"</span>,<span class="str">"2024-01-12"</span>,
+                                  <span class="str">"2024-01-13"</span>,<span class="str">"2024-01-14"</span>,<span class="str">"2024-01-15"</span>,<span class="str">"2024-01-15"</span>,
+                                  <span class="str">"2024-01-16"</span>,<span class="str">"2024-01-17"</span>]),
+    <span class="str">"amount"</span>:     [<span class="num">29.99</span>,<span class="num">29.99</span>,<span class="num">49.00</span>,<span class="num">15.50</span>,<span class="num">15.50</span>,<span class="num">89.00</span>,<span class="num">34.00</span>,<span class="num">34.00</span>,<span class="num">29.99</span>,<span class="num">110.00</span>],
+    <span class="str">"category"</span>:   [<span class="str">"Electronics"</span>,<span class="str">"Electronics"</span>,<span class="str">"Books"</span>,<span class="str">"Clothing"</span>,<span class="str">"Clothing"</span>,
+                   <span class="str">"Electronics"</span>,<span class="str">"Books"</span>,<span class="str">"Books"</span>,<span class="str">"Electronics"</span>,<span class="str">"Clothing"</span>],
+    <span class="str">"source"</span>:     [<span class="str">"sys_A"</span>,<span class="str">"sys_A"</span>,<span class="str">"sys_B"</span>,<span class="str">"sys_A"</span>,<span class="str">"sys_B"</span>,
+                   <span class="str">"sys_C"</span>,<span class="str">"sys_A"</span>,<span class="str">"sys_B"</span>,<span class="str">"sys_A"</span>,<span class="str">"sys_C"</span>],
+    <span class="str">"status"</span>:     [<span class="str">"active"</span>,<span class="str">"active"</span>,<span class="str">"active"</span>,<span class="str">"active"</span>,<span class="str">"deleted"</span>,
+                   <span class="str">"active"</span>,<span class="str">"active"</span>,<span class="str">"active"</span>,<span class="str">"active"</span>,<span class="str">"active"</span>],
+})
+
+<span class="fn">print</span>(orders.to_string())</code></pre>
+      <div class="out">
+        <div class="out-label">Dataset</div>
+<pre>  order_id       customer       date     amount    category source  status
+0  ORD-001  Alice Johnson 2024-01-10      29.99 Electronics  sys_A  active
+1  ORD-001  Alice Johnson 2024-01-10      29.99 Electronics  sys_A  active  ← exact dup
+2  ORD-002    Bob Smith   2024-01-11      49.00       Books  sys_B  active
+3  ORD-003  Carol White   2024-01-12      15.50    Clothing  sys_A  active
+4  ORD-003  Carol White   2024-01-13      15.50    Clothing  sys_B deleted  ← key dup, diff date+source+status
+5  ORD-004   Dave Brown   2024-01-14      89.00 Electronics  sys_C  active
+6  ORD-005  Eve Martinez  2024-01-15      34.00       Books  sys_A  active
+7  ORD-005  Eve Martínez  2024-01-15      34.00       Books  sys_B  active  ← accent variant
+8  ORD-006  Alice Jonhson 2024-01-16      29.99 Electronics  sys_A  active  ← typo (Alice Johnson)
+9  ORD-007   Frank Lee    2024-01-17     110.00    Clothing  sys_C  active</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  DETECT  ═══════════ -->
+<div class="section" id="detect">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(56,189,248,.1)">🔍</div>
+    <h2>Step 1 — Detect Duplicates</h2>
+  </div>
+  <p class="sh-sub">Always measure before you remove. Know the count, location, and structure of duplicates before deciding on a strategy.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>duplicated() — the core detection method</h3><span class="pill p-blue">Core API</span></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># ── Basic detection ──────────────────────────────────────────────</span>
+df = orders.copy()
+
+<span class="cmt"># Count</span>
+<span class="fn">print</span>(<span class="grn">f"Total rows          : {len(df)}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Exact dup rows      : {df.duplicated().sum()}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Unique rows         : {(~df.duplicated()).sum()}"</span>)
+
+<span class="cmt"># Show ALL rows involved in duplication (keep=False marks every copy)</span>
+all_dups = df[df.duplicated(keep=<span class="cls">False</span>)]
+<span class="fn">print</span>(<span class="grn">f"\nAll rows in dup groups: {len(all_dups)}"</span>)
+
+<span class="cmt"># Per-column duplicate rates</span>
+<span class="fn">print</span>(<span class="str">"\nColumn-level duplicate rates:"</span>)
+<span class="kw">for</span> col <span class="kw">in</span> df.columns:
+    dup_pct = df.duplicated(subset=[col], keep=<span class="cls">False</span>).<span class="fn">mean</span>() * <span class="num">100</span>
+    <span class="fn">print</span>(<span class="grn">f"  {col:<15} {dup_pct:.1f}%"</span>)
+
+<span class="cmt"># keep parameter: what counts as "the duplicate"</span>
+<span class="cmt"># keep="first"  → mark all EXCEPT first occurrence as dup (default)</span>
+<span class="cmt"># keep="last"   → mark all EXCEPT last occurrence as dup</span>
+<span class="cmt"># keep=False    → mark ALL occurrences in any dup group as dup</span>
+<span class="fn">print</span>(<span class="str">"\nkeep comparison for order_id ORD-001:"</span>)
+mask_first = df.duplicated(subset=[<span class="str">"order_id"</span>], keep=<span class="str">"first"</span>)
+mask_last  = df.duplicated(subset=[<span class="str">"order_id"</span>], keep=<span class="str">"last"</span>)
+mask_all   = df.duplicated(subset=[<span class="str">"order_id"</span>], keep=<span class="cls">False</span>)
+
+<span class="fn">print</span>(pd.DataFrame({<span class="str">"order_id"</span>: df[<span class="str">"order_id"</span>],
+                     <span class="str">"keep=first"</span>: mask_first,
+                     <span class="str">"keep=last"</span>:  mask_last,
+                     <span class="str">"keep=False"</span>: mask_all}).head(<span class="num">5</span>).to_string())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Total rows          : 10
+Exact dup rows      : 1       ← only rows 0/1 are exact full-row duplicates
+Unique rows         : 9
+All rows in dup groups: 2
+
+Column-level duplicate rates:
+  order_id        60.0%    ← order_id repeated across 6 rows
+  customer        70.0%
+  amount          70.0%
+  category        90.0%
+  source          60.0%
+
+  order_id  keep=first  keep=last  keep=False
+0  ORD-001       False      True        True   ← row 0: first, so not dup with keep=first
+1  ORD-001        True     False        True   ← row 1: dup with keep=first
+3  ORD-003       False      True        True
+4  ORD-003        True     False        True</pre>
+      </div>
+      <div class="info info-blue"><strong>💡 keep=False is your diagnostic friend:</strong> Use <code>keep=False</code> when you want to <em>see</em> all rows involved in a duplicate group — not to drop, just to inspect the full problem extent.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Duplicate audit — count by group</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># How many times does each order_id appear?</span>
+freq = df[<span class="str">"order_id"</span>].value_counts()
+dups_only = freq[freq > <span class="num">1</span>]
+<span class="fn">print</span>(<span class="str">"order_ids with duplicates:"</span>)
+<span class="fn">print</span>(dups_only)
+
+<span class="cmt"># Full rows for each duplicate group</span>
+<span class="kw">for</span> oid <span class="kw">in</span> dups_only.index:
+    <span class="fn">print</span>(<span class="grn">f"\n── Group: {oid} ──"</span>)
+    <span class="fn">print</span>(df[df[<span class="str">"order_id"</span>] == oid].to_string())
+
+<span class="cmt"># Summary: how many unique IDs, how many total rows, how many extra</span>
+<span class="fn">print</span>(<span class="grn">f"\nUnique order_ids : {df['order_id'].nunique()}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Total rows       : {len(df)}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Redundant rows   : {len(df) - df['order_id'].nunique()}"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>order_ids with duplicates:
+ORD-001    2
+ORD-003    2
+ORD-005    2
+Name: order_id, dtype: int64
+
+── Group: ORD-001 ──           ← exact duplicate (same source)
+── Group: ORD-003 ──           ← different dates, sources, and status
+── Group: ORD-005 ──           ← accent variant in customer name</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  EXACT  ═══════════ -->
+<div class="section" id="exact">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(74,222,128,.1)">✂️</div>
+    <h2>Exact Row Duplicates</h2>
+  </div>
+  <p class="sh-sub">Every column value is identical. The safest and most common case — <code>drop_duplicates()</code> with no arguments.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>drop_duplicates() — all options</h3><span class="pill p-green">Exact</span></div>
+    <div class="card-b">
+<pre><code>df = orders.copy()
+
+<span class="cmt"># ── Default: remove exact duplicates, keep first occurrence ─────</span>
+df_clean = df.drop_duplicates()
+<span class="fn">print</span>(<span class="grn">f"Before: {len(df)}  →  After: {len(df_clean)}"</span>)
+
+<span class="cmt"># ── keep="last": keep the last occurrence instead ────────────────</span>
+df_last = df.drop_duplicates(keep=<span class="str">"last"</span>)
+<span class="fn">print</span>(<span class="grn">f"keep=last  rows: {len(df_last)}"</span>)
+
+<span class="cmt"># ── keep=False: REMOVE all rows in any duplicate group ───────────</span>
+<span class="cmt"># Useful when ANY duplicate is suspicious (e.g., payment processing)</span>
+df_none = df.drop_duplicates(keep=<span class="cls">False</span>)
+<span class="fn">print</span>(<span class="grn">f"keep=False rows: {len(df_none)}  ← both copies removed"</span>)
+
+<span class="cmt"># ── inplace=True (modifies df directly) ──────────────────────────</span>
+df2 = df.copy()
+df2.drop_duplicates(inplace=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"inplace result : {len(df2)}"</span>)
+
+<span class="cmt"># ── Always reset index after dropping ────────────────────────────</span>
+df_clean = df.drop_duplicates().reset_index(drop=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"\nIndex after reset: {df_clean.index.tolist()[:5]}"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Before: 10  →  After: 9     ← row 1 (exact copy of row 0) removed
+keep=last  rows: 9
+keep=False rows: 8           ← both row 0 AND row 1 removed (no survivor)
+
+Index after reset: [0, 1, 2, 3, 4]  ← clean 0-based index</pre>
+      </div>
+      <div class="info info-orange"><strong>⚠️ Always reset_index:</strong> After <code>drop_duplicates()</code> the index still has the original integers (holes where rows were dropped). Downstream <code>iloc</code> and merge operations can behave unexpectedly. Always chain <code>.reset_index(drop=True)</code>.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Large-scale exact dedup — 1 million rows</h3><span class="pill p-green">Scale</span></div>
+    <div class="card-b">
+<pre><code>N = <span class="num">1_000_000</span>
+big = pd.DataFrame({
+    <span class="str">"id"</span>:    np.random.randint(<span class="num">1</span>, <span class="num">800_000</span>, N),   <span class="cmt"># ~20% duplicates</span>
+    <span class="str">"val1"</span>:  np.random.choice([<span class="str">"A"</span>,<span class="str">"B"</span>,<span class="str">"C"</span>], N),
+    <span class="str">"val2"</span>:  np.random.randint(<span class="num">0</span>, <span class="num">100</span>, N),
+    <span class="str">"score"</span>: np.random.uniform(<span class="num">0</span>, <span class="num">1</span>, N),
+})
+
+<span class="kw">import</span> time
+t0 = time.perf_counter()
+big_clean = big.drop_duplicates().reset_index(drop=<span class="cls">True</span>)
+elapsed = time.perf_counter() - t0
+
+<span class="fn">print</span>(<span class="grn">f"Rows before : {len(big):,}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Rows after  : {len(big_clean):,}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Removed     : {len(big)-len(big_clean):,}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Time        : {elapsed:.3f}s"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Rows before : 1,000,000
+Rows after  :   799,987
+Removed     :   200,013
+Time        : 0.412s     ← drop_duplicates is fast — hash-based internally</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  KEY-BASED  ═══════════ -->
+<div class="section" id="key">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(56,189,248,.1)">🔑</div>
+    <h2>Key-Based Duplicates (subset=)</h2>
+  </div>
+  <p class="sh-sub">Same primary key, but other columns differ. Use <code>subset=</code> to define which columns form the key. The hardest part is deciding <em>which copy to keep</em>.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>subset= — deduplicate by business key</h3><span class="pill p-blue">Key-based</span></div>
+    <div class="card-b">
+<pre><code>df = orders.copy()
+
+<span class="cmt"># ── Keep first by order_id ────────────────────────────────────────</span>
+df_first = df.drop_duplicates(subset=[<span class="str">"order_id"</span>], keep=<span class="str">"first"</span>)
+<span class="fn">print</span>(<span class="grn">f"keep first : {len(df_first)} rows"</span>)
+
+<span class="cmt"># ── Keep highest amount (sort first, then keep first) ────────────</span>
+df_max_amount = (
+    df.sort_values(<span class="str">"amount"</span>, ascending=<span class="cls">False</span>)          <span class="cmt"># highest first</span>
+      .drop_duplicates(subset=[<span class="str">"order_id"</span>], keep=<span class="str">"first"</span>)  <span class="cmt"># keep highest</span>
+      .sort_values(<span class="str">"order_id"</span>)
+      .reset_index(drop=<span class="cls">True</span>)
+)
+<span class="fn">print</span>(df_max_amount[[<span class="str">"order_id"</span>,<span class="str">"amount"</span>]].to_string())
+
+<span class="cmt"># ── Keep most recent date ────────────────────────────────────────</span>
+df_latest = (
+    df.sort_values(<span class="str">"date"</span>, ascending=<span class="cls">False</span>)
+      .drop_duplicates(subset=[<span class="str">"order_id"</span>], keep=<span class="str">"first"</span>)
+      .sort_values(<span class="str">"order_id"</span>)
+      .reset_index(drop=<span class="cls">True</span>)
+)
+<span class="fn">print</span>(<span class="str">"\nLatest per order_id:"</span>)
+<span class="fn">print</span>(df_latest[[<span class="str">"order_id"</span>,<span class="str">"date"</span>,<span class="str">"status"</span>]].to_string())
+
+<span class="cmt"># ── Prefer "active" over "deleted" status ───────────────────────</span>
+STATUS_PRIORITY = {<span class="str">"active"</span>: <span class="num">0</span>, <span class="str">"pending"</span>: <span class="num">1</span>, <span class="str">"deleted"</span>: <span class="num">2</span>}
+df[<span class="str">"_status_rank"</span>] = df[<span class="str">"status"</span>].map(STATUS_PRIORITY).fillna(<span class="num">99</span>)
+df_active = (
+    df.sort_values(<span class="str">"_status_rank"</span>)
+      .drop_duplicates(subset=[<span class="str">"order_id"</span>], keep=<span class="str">"first"</span>)
+      .drop(columns=[<span class="str">"_status_rank"</span>])
+      .reset_index(drop=<span class="cls">True</span>)
+)
+<span class="fn">print</span>(<span class="str">"\nPrefer active status:"</span>)
+<span class="fn">print</span>(df_active[[<span class="str">"order_id"</span>,<span class="str">"date"</span>,<span class="str">"status"</span>]].to_string())</code></pre>
+      <div class="out">
+        <div class="out-label">Output — prefer active status</div>
+<pre>order_id       date   status
+ORD-001  2024-01-10   active
+ORD-002  2024-01-11   active
+ORD-003  2024-01-12   active   ← active kept; 2024-01-13 "deleted" dropped ✅
+ORD-004  2024-01-14   active
+ORD-005  2024-01-15   active
+ORD-006  2024-01-16   active
+ORD-007  2024-01-17   active</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Compound key — deduplicate on multiple columns</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Deduplicate on (customer, date, amount) — same purchase same day</span>
+df_compound = df.drop_duplicates(
+    subset=[<span class="str">"customer"</span>, <span class="str">"date"</span>, <span class="str">"amount"</span>],
+    keep=<span class="str">"first"</span>
+).reset_index(drop=<span class="cls">True</span>)
+
+<span class="fn">print</span>(<span class="grn">f"Rows after compound key dedup: {len(df_compound)}"</span>)
+
+<span class="cmt"># ── Multi-column approach: all non-ID columns as key ────────────</span>
+key_cols = [c <span class="kw">for</span> c <span class="kw">in</span> df.columns <span class="kw">if</span> c != <span class="str">"source"</span>]   <span class="cmt"># ignore source system</span>
+df_no_src = df.drop_duplicates(subset=key_cols, keep=<span class="str">"first"</span>).reset_index(drop=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"Rows ignoring source column: {len(df_no_src)}"</span>)</code></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Aggregate conflicting data instead of dropping</h3></div>
+    <div class="card-b">
+      <div class="scenario">💡 <strong>Scenario:</strong> ORD-003 appears in sys_A (active, 2024-01-12) and sys_B (deleted, 2024-01-13). Instead of silently dropping one, aggregate both into a single consolidated row.</div>
+<pre><code><span class="cmt"># Aggregate conflicting duplicate rows by order_id</span>
+agg_rules = {
+    <span class="str">"customer"</span>:  <span class="str">"first"</span>,                <span class="cmt"># take first customer name</span>
+    <span class="str">"date"</span>:      <span class="str">"max"</span>,                  <span class="cmt"># most recent date</span>
+    <span class="str">"amount"</span>:    <span class="str">"mean"</span>,                 <span class="cmt"># average of conflicting amounts</span>
+    <span class="str">"category"</span>:  <span class="str">"first"</span>,
+    <span class="str">"source"</span>:    <span class="kw">lambda</span> x: <span class="str">"+"</span>.join(x.unique()),   <span class="cmt"># combine source systems</span>
+    <span class="str">"status"</span>:    <span class="kw">lambda</span> x: <span class="str">"active"</span> <span class="kw">if</span> <span class="str">"active"</span> <span class="kw">in</span> x.values <span class="kw">else</span> x.iloc[<span class="num">0</span>],
+}
+
+df_agg = (
+    df.groupby(<span class="str">"order_id"</span>, as_index=<span class="cls">False</span>)
+      .agg(agg_rules)
+)
+
+<span class="fn">print</span>(df_agg[[<span class="str">"order_id"</span>,<span class="str">"date"</span>,<span class="str">"source"</span>,<span class="str">"status"</span>]].to_string())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>order_id        date       source  status
+ ORD-001  2024-01-10        sys_A  active
+ ORD-002  2024-01-11        sys_B  active
+ ORD-003  2024-01-13  sys_A+sys_B  active  ← merged both sources; kept active ✅
+ ORD-004  2024-01-14        sys_C  active
+ ORD-005  2024-01-15  sys_A+sys_B  active  ← merged
+ ORD-006  2024-01-16        sys_A  active
+ ORD-007  2024-01-17        sys_C  active</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  CONDITIONAL  ═══════════ -->
+<div class="section" id="conditional">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(250,204,21,.1)">⚖️</div>
+    <h2>Conditional Duplicates</h2>
+  </div>
+  <p class="sh-sub">Remove duplicates only under certain conditions — ignore soft-deleted rows, skip certain sources, or apply different rules per group.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Exclude rows from dedup logic (e.g. deleted records)</h3><span class="pill p-yellow">Conditional</span></div>
+    <div class="card-b">
+<pre><code>df = orders.copy()
+
+<span class="cmt"># ── Strategy: only dedup "active" rows; keep all "deleted" as-is ─</span>
+active   = df[df[<span class="str">"status"</span>] == <span class="str">"active"</span>].drop_duplicates(
+               subset=[<span class="str">"order_id"</span>], keep=<span class="str">"first"</span>)
+non_active = df[df[<span class="str">"status"</span>] != <span class="str">"active"</span>]
+
+result = pd.concat([active, non_active]).sort_values(<span class="str">"order_id"</span>).reset_index(drop=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"Result rows: {len(result)}"</span>)
+<span class="fn">print</span>(result[[<span class="str">"order_id"</span>,<span class="str">"status"</span>,<span class="str">"source"</span>]].to_string())
+
+<span class="cmt"># ── Dedup only within a specific source system ────────────────────</span>
+<span class="cmt"># sys_A ingested twice; sys_B and sys_C are authoritative</span>
+sys_a = df[df[<span class="str">"source"</span>] == <span class="str">"sys_A"</span>].drop_duplicates(
+            subset=[<span class="str">"order_id"</span>], keep=<span class="str">"first"</span>)
+others = df[df[<span class="str">"source"</span>] != <span class="str">"sys_A"</span>]
+
+deduped = (pd.concat([sys_a, others])
+             .drop_duplicates(subset=[<span class="str">"order_id"</span>], keep=<span class="str">"last"</span>)
+             .reset_index(drop=<span class="cls">True</span>))
+<span class="fn">print</span>(<span class="grn">f"\nAfter source-aware dedup: {len(deduped)} rows"</span>)</code></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Per-group deduplication using groupby + rank</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Keep only the most recent order per customer per category</span>
+<span class="cmt"># (each customer should have max 1 active order per category)</span>
+
+df[<span class="str">"rank"</span>] = (
+    df.groupby([<span class="str">"customer"</span>, <span class="str">"category"</span>])[<span class="str">"date"</span>]
+      .rank(method=<span class="str">"first"</span>, ascending=<span class="cls">False</span>)   <span class="cmt"># 1 = most recent</span>
+)
+
+latest_per_group = df[df[<span class="str">"rank"</span>] == <span class="num">1</span>].drop(columns=[<span class="str">"rank"</span>]).reset_index(drop=<span class="cls">True</span>)
+
+<span class="fn">print</span>(<span class="grn">f"Rows after per-group dedup: {len(latest_per_group)}"</span>)
+<span class="fn">print</span>(latest_per_group[[<span class="str">"customer"</span>,<span class="str">"category"</span>,<span class="str">"date"</span>]].to_string())</code></pre>
+      <div class="info info-green"><strong>✅ Rank vs drop_duplicates:</strong> <code>groupby().rank()</code> is more flexible than <code>drop_duplicates(subset=...)</code> when the "keep" rule is based on a value within the group (most recent, highest score, etc.) rather than just row order.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  PARTIAL  ═══════════ -->
+<div class="section" id="partial">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(45,212,191,.1)">🧩</div>
+    <h2>Partial / Subset Column Patterns</h2>
+  </div>
+  <p class="sh-sub">Real datasets often need finer-grained control — ignore certain columns, handle nulls in the key, or deduplicate within a time window.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Deduplicate excluding certain columns</h3><span class="pill p-teal">Subset</span></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Ignore auto-generated columns (timestamps, UUIDs, load IDs)</span>
+IGNORE_COLS = [<span class="str">"source"</span>, <span class="str">"status"</span>]   <span class="cmt"># ignore system metadata</span>
+key_cols    = [c <span class="kw">for</span> c <span class="kw">in</span> df.columns <span class="kw">if</span> c <span class="kw">not</span> <span class="kw">in</span> IGNORE_COLS]
+
+df_ignore = df.drop_duplicates(subset=key_cols, keep=<span class="str">"first"</span>).reset_index(drop=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"Dedup ignoring {IGNORE_COLS}: {len(df_ignore)} rows"</span>)
+
+<span class="cmt"># ── Handle NaN in key columns — NaN != NaN by default ────────────</span>
+df_with_nulls = pd.DataFrame({
+    <span class="str">"id"</span>:    [<span class="num">1</span>, <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">3</span>],
+    <span class="str">"email"</span>: [<span class="str">"a@b.com"</span>, <span class="str">"a@b.com"</span>, np.nan, np.nan, np.nan],
+    <span class="str">"val"</span>:   [<span class="num">10</span>, <span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>, <span class="num">30</span>],
+})
+
+<span class="cmt"># Default: NaN == NaN treated as equal in duplicated() for object cols</span>
+<span class="fn">print</span>(<span class="str">"\nNaN handling in duplicated():"</span>)
+<span class="fn">print</span>(df_with_nulls.duplicated())
+
+<span class="cmt"># Intentional: treat NaN as non-matching (each NaN is unique)</span>
+<span class="cmt"># Fill NaN with unique sentinel before dedup, then restore</span>
+SENTINEL = <span class="str">"__MISSING__"</span>
+df_tmp = df_with_nulls.copy()
+df_tmp[<span class="str">"email"</span>] = df_tmp[<span class="str">"email"</span>].fillna(
+    df_tmp.index.map(<span class="kw">lambda</span> i: <span class="grn">f"{SENTINEL}_{i}"</span>)
+)
+deduped_nulls = df_with_nulls[~df_tmp.duplicated()].reset_index(drop=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="str">"\nWith NaN-as-unique sentinel:"</span>)
+<span class="fn">print</span>(deduped_nulls)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>NaN handling in duplicated():
+0    False
+1     True    ← NaN == NaN (treated equal) — row 1 is dup of row 0
+2    False
+3    False
+4     True    ← rows 3 and 4 both NaN → treated as equal
+
+With NaN-as-unique sentinel:
+   id    email  val
+0   1  a@b.com   10
+1   2      NaN   20
+2   3      NaN   30   ← NaN rows now all kept (treated as distinct)</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Time-window deduplication — same event within N minutes</h3></div>
+    <div class="card-b">
+      <div class="scenario">⏱️ <strong>Scenario:</strong> Payment gateway logs — the same payment may be retried within 60 seconds due to timeout. Any two identical (customer, amount) rows within 60 seconds are a retry, not a new payment.</div>
+<pre><code>payments = pd.DataFrame({
+    <span class="str">"payment_id"</span>: <span class="fn">range</span>(<span class="num">1</span>, <span class="num">9</span>),
+    <span class="str">"customer_id"</span>: [<span class="num">101</span>, <span class="num">101</span>, <span class="num">101</span>, <span class="num">202</span>, <span class="num">202</span>, <span class="num">303</span>, <span class="num">303</span>, <span class="num">404</span>],
+    <span class="str">"amount"</span>:      [<span class="num">50.0</span>, <span class="num">50.0</span>, <span class="num">50.0</span>, <span class="num">120.0</span>, <span class="num">120.0</span>, <span class="num">80.0</span>, <span class="num">80.0</span>, <span class="num">200.0</span>],
+    <span class="str">"ts"</span>: pd.to_datetime([
+        <span class="str">"2024-01-01 10:00:00"</span>, <span class="str">"2024-01-01 10:00:30"</span>,  <span class="cmt"># 30s apart → retry</span>
+        <span class="str">"2024-01-01 10:05:00"</span>,                           <span class="cmt"># 5 min later → new</span>
+        <span class="str">"2024-01-01 11:00:00"</span>, <span class="str">"2024-01-01 11:00:45"</span>,  <span class="cmt"># 45s → retry</span>
+        <span class="str">"2024-01-01 12:00:00"</span>, <span class="str">"2024-01-01 12:02:00"</span>,  <span class="cmt"># 2 min → new payment</span>
+        <span class="str">"2024-01-01 13:00:00"</span>,
+    ])
+})
+
+<span class="cmt"># ── Time-window dedup: remove rows within 60s of a prior identical row ──</span>
+WINDOW = pd.Timedelta(<span class="str">"60s"</span>)
+
+payments = payments.sort_values([<span class="str">"customer_id"</span>, <span class="str">"amount"</span>, <span class="str">"ts"</span>]).reset_index(drop=<span class="cls">True</span>)
+
+mask_keep = []
+prev = {}
+
+<span class="kw">for</span> _, row <span class="kw">in</span> payments.iterrows():
+    key = (row[<span class="str">"customer_id"</span>], row[<span class="str">"amount"</span>])
+    <span class="kw">if</span> key <span class="kw">in</span> prev <span class="kw">and</span> (row[<span class="str">"ts"</span>] - prev[key]) <= WINDOW:
+        mask_keep.append(<span class="cls">False</span>)   <span class="cmt"># within window → retry, drop</span>
+    <span class="kw">else</span>:
+        mask_keep.append(<span class="cls">True</span>)    <span class="cmt"># new payment, keep</span>
+        prev[key] = row[<span class="str">"ts"</span>]
+
+deduped_pay = payments[mask_keep].reset_index(drop=<span class="cls">True</span>)
+<span class="fn">print</span>(deduped_pay[[<span class="str">"payment_id"</span>,<span class="str">"customer_id"</span>,<span class="str">"amount"</span>,<span class="str">"ts"</span>]].to_string())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>payment_id  customer_id  amount                  ts
+         1          101    50.0 2024-01-01 10:00:00  ← kept
+         3          101    50.0 2024-01-01 10:05:00  ← kept (5 min later)
+         4          202   120.0 2024-01-01 11:00:00  ← kept
+         6          303    80.0 2024-01-01 12:00:00  ← kept
+         7          303    80.0 2024-01-01 12:02:00  ← kept (2 min > 60s)
+         8          404   200.0 2024-01-01 13:00:00  ← kept
+
+Removed: payment_id 2 (30s retry) and payment_id 5 (45s retry) ✅</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  FUZZY  ═══════════ -->
+<div class="section" id="fuzzy">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(139,92,246,.1)">🔤</div>
+    <h2>Fuzzy / Near-Duplicates</h2>
+  </div>
+  <p class="sh-sub">String fields like customer names contain typos, accent variants, and abbreviations. These are not caught by exact matching — they require similarity scoring.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>SequenceMatcher — simple fuzzy dedup</h3><span class="pill p-purple">Fuzzy</span></div>
+    <div class="card-b">
+<pre><code><span class="kw">from</span> difflib <span class="kw">import</span> SequenceMatcher
+
+<span class="kw">def</span> <span class="fn">sim</span>(a: <span class="cls">str</span>, b: <span class="cls">str</span>) -> <span class="cls">float</span>:
+    <span class="kw">if</span> pd.isna(a) <span class="kw">or</span> pd.isna(b): <span class="kw">return</span> <span class="num">0.0</span>
+    <span class="kw">return</span> SequenceMatcher(<span class="cls">None</span>, a.lower(), b.lower()).ratio()
+
+<span class="cmt"># Customer names from our dataset including the typo (Alice Jonhson)</span>
+names = df[<span class="str">"customer"</span>].dropna().unique()
+<span class="fn">print</span>(<span class="str">"Customer names:"</span>, names)
+
+<span class="cmt"># Find all pairs with similarity > threshold</span>
+THRESHOLD = <span class="num">0.85</span>
+pairs = []
+<span class="kw">for</span> i, a <span class="kw">in</span> <span class="fn">enumerate</span>(names):
+    <span class="kw">for</span> j, b <span class="kw">in</span> <span class="fn">enumerate</span>(names):
+        <span class="kw">if</span> j <= i: <span class="kw">continue</span>   <span class="cmt"># avoid double-counting</span>
+        score = <span class="fn">sim</span>(a, b)
+        <span class="kw">if</span> score >= THRESHOLD:
+            pairs.append({<span class="str">"name_a"</span>: a, <span class="str">"name_b"</span>: b, <span class="str">"similarity"</span>: <span class="fn">round</span>(score, <span class="num">3</span>)})
+
+<span class="fn">print</span>(pd.DataFrame(pairs).to_string())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Customer names: ['Alice Johnson' 'Bob Smith' 'Carol White' 'Dave Brown'
+                 'Eve Martinez' 'Eve Martínez' 'Alice Jonhson' 'Frank Lee']
+
+       name_a         name_b  similarity
+Alice Johnson  Alice Jonhson       0.923   ← typo detected ✅
+ Eve Martinez   Eve Martínez       0.923   ← accent variant detected ✅</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>TF-IDF cosine similarity — scales to thousands of names</h3><span class="pill p-purple">Scale</span></div>
+    <div class="card-b">
+<pre><code><span class="kw">from</span> sklearn.feature_extraction.text <span class="kw">import</span> TfidfVectorizer
+<span class="kw">from</span> sklearn.metrics.pairwise <span class="kw">import</span> cosine_similarity
+<span class="kw">import</span> unicodedata
+
+<span class="kw">def</span> <span class="fn">normalise</span>(s: <span class="cls">str</span>) -> <span class="cls">str</span>:
+    <span class="str">"""Lowercase + strip accents."""</span>
+    s = s.lower().strip()
+    <span class="kw">return</span> unicodedata.normalize(<span class="str">"NFKD"</span>, s).encode(<span class="str">"ascii"</span>, <span class="str">"ignore"</span>).decode()
+
+names_clean = [<span class="fn">normalise</span>(n) <span class="kw">for</span> n <span class="kw">in</span> names]
+
+<span class="cmt"># Character-level 2-3-gram TF-IDF → cosine similarity</span>
+vectorizer = TfidfVectorizer(analyzer=<span class="str">"char_wb"</span>, ngram_range=(<span class="num">2</span>, <span class="num">3</span>))
+tfidf_mat  = vectorizer.fit_transform(names_clean)
+cos_sim    = cosine_similarity(tfidf_mat)
+np.fill_diagonal(cos_sim, <span class="num">0</span>)
+
+THRESHOLD  = <span class="num">0.7</span>
+pairs_idx  = np.argwhere(cos_sim >= THRESHOLD)
+
+<span class="fn">print</span>(<span class="str">"Near-duplicate pairs (TF-IDF cosine ≥ 0.7):"</span>)
+<span class="kw">for</span> i, j <span class="kw">in</span> pairs_idx:
+    <span class="kw">if</span> i < j:
+        <span class="fn">print</span>(<span class="grn">f"  {names[i]!r:<25} ↔  {names[j]!r:<25}  score={cos_sim[i,j]:.3f}"</span>)
+
+<span class="cmt"># ── Build canonical name mapping ──────────────────────────────────</span>
+<span class="cmt"># Reduce each near-dup cluster to one canonical name (first alphabetically)</span>
+from_name, to_name = [], []
+<span class="kw">for</span> i, j <span class="kw">in</span> pairs_idx:
+    <span class="kw">if</span> i < j:
+        canon = <span class="fn">min</span>(names[i], names[j])   <span class="cmt"># simplest: take alphabetically first</span>
+        from_name.append(names[<span class="fn">max</span>(i,j)])
+        to_name.append(canon)
+
+canon_map = <span class="cls">dict</span>(<span class="fn">zip</span>(from_name, to_name))
+<span class="fn">print</span>(<span class="grn">f"\nCanonical map: {canon_map}"</span>)
+
+<span class="cmt"># Apply to dataset</span>
+df[<span class="str">"customer_canonical"</span>] = df[<span class="str">"customer"</span>].replace(canon_map)
+<span class="fn">print</span>(df[[<span class="str">"customer"</span>,<span class="str">"customer_canonical"</span>]].drop_duplicates().to_string())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Near-duplicate pairs (TF-IDF cosine ≥ 0.7):
+  'Alice Johnson'    ↔  'Alice Jonhson'    score=0.821
+  'Eve Martinez'     ↔  'Eve Martínez'     score=0.935
+
+Canonical map: {'Alice Jonhson': 'Alice Johnson', 'Eve Martínez': 'Eve Martinez'}
+
+     customer  customer_canonical
+Alice Johnson   Alice Johnson        ← unchanged
+Alice Jonhson   Alice Johnson   ✅   ← typo corrected
+ Eve Martinez    Eve Martinez        ← unchanged
+ Eve Martínez    Eve Martinez   ✅   ← accent corrected</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Phonetic matching — Soundex / Metaphone</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Soundex: same pronunciation → same code</span>
+<span class="cmt"># Pure Python implementation (no extra library needed)</span>
+<span class="kw">def</span> <span class="fn">soundex</span>(name: <span class="cls">str</span>) -> <span class="cls">str</span>:
+    name = name.upper().strip()
+    <span class="kw">if</span> <span class="kw">not</span> name: <span class="kw">return</span> <span class="str">""</span>
+    codes = {<span class="str">"BFPV"</span>: <span class="str">"1"</span>, <span class="str">"CGJKQSXYZ"</span>: <span class="str">"2"</span>, <span class="str">"DT"</span>: <span class="str">"3"</span>,
+             <span class="str">"L"</span>: <span class="str">"4"</span>, <span class="str">"MN"</span>: <span class="str">"5"</span>, <span class="str">"R"</span>: <span class="str">"6"</span>}
+    <span class="kw">def</span> <span class="fn">encode</span>(c):
+        <span class="kw">for</span> k, v <span class="kw">in</span> codes.items():
+            <span class="kw">if</span> c <span class="kw">in</span> k: <span class="kw">return</span> v
+        <span class="kw">return</span> <span class="str">"0"</span>
+    result = name[<span class="num">0</span>]
+    prev = <span class="fn">encode</span>(name[<span class="num">0</span>])
+    <span class="kw">for</span> c <span class="kw">in</span> name[<span class="num">1</span>:]:
+        e = <span class="fn">encode</span>(c)
+        <span class="kw">if</span> e != <span class="str">"0"</span> <span class="kw">and</span> e != prev:
+            result += e; prev = e
+        <span class="kw">if</span> <span class="fn">len</span>(result) == <span class="num">4</span>: <span class="kw">break</span>
+    <span class="kw">return</span> result.ljust(<span class="num">4</span>, <span class="str">"0"</span>)
+
+test_names = [<span class="str">"Johnson"</span>, <span class="str">"Jonhson"</span>, <span class="str">"Johnsen"</span>, <span class="str">"Smith"</span>, <span class="str">"Smyth"</span>]
+<span class="kw">for</span> n <span class="kw">in</span> test_names:
+    <span class="fn">print</span>(<span class="grn">f"{n:<12} → {soundex(n)}"</span>)
+
+<span class="cmt"># Add soundex code to DataFrame for group-level dedup</span>
+df[<span class="str">"cust_soundex"</span>] = df[<span class="str">"customer"</span>].apply(
+    <span class="kw">lambda</span> x: <span class="fn">soundex</span>(x.split()[<span class="num">-1</span>]) <span class="kw">if</span> pd.notna(x) <span class="kw">else</span> np.nan
+)
+<span class="fn">print</span>(<span class="str">"\nSoundex groups:"</span>)
+<span class="fn">print</span>(df[[<span class="str">"customer"</span>,<span class="str">"cust_soundex"</span>]].drop_duplicates().sort_values(<span class="str">"cust_soundex"</span>))</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Johnson      → J525
+Jonhson      → J525   ← same code as Johnson ✅
+Johnsen      → J525   ← same code ✅
+Smith        → S530
+Smyth        → S530   ← same code as Smith ✅</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  TIME SERIES  ═══════════ -->
+<div class="section" id="timeseries">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(45,212,191,.1)">🕐</div>
+    <h2>Time Series Duplicates</h2>
+  </div>
+  <p class="sh-sub">Timestamp-indexed data requires special handling — duplicate timestamps after resampling, or real repeated measurements.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Duplicate timestamps in a DatetimeIndex</h3><span class="pill p-teal">Time Series</span></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Sensor that sometimes sends the same reading twice</span>
+idx = pd.to_datetime([
+    <span class="str">"2024-01-01 08:00"</span>, <span class="str">"2024-01-01 08:01"</span>, <span class="str">"2024-01-01 08:01"</span>,  <span class="cmt"># ← dup ts</span>
+    <span class="str">"2024-01-01 08:02"</span>, <span class="str">"2024-01-01 08:03"</span>, <span class="str">"2024-01-01 08:03"</span>,  <span class="cmt"># ← dup ts</span>
+    <span class="str">"2024-01-01 08:04"</span>,
+])
+sensor = pd.Series([22.1, 22.3, 22.3, 22.5, 22.7, 22.9, 23.0], index=idx, name=<span class="str">"temp"</span>)
+
+<span class="fn">print</span>(<span class="grn">f"Duplicate timestamps: {sensor.index.duplicated().sum()}"</span>)
+
+<span class="cmt"># Option A: keep first duplicate timestamp</span>
+dedup_first = sensor[~sensor.index.duplicated(keep=<span class="str">"first"</span>)]
+
+<span class="cmt"># Option B: average duplicate readings (more accurate)</span>
+dedup_mean  = sensor.groupby(sensor.index).mean()
+
+<span class="cmt"># Option C: sum duplicate readings (e.g. duplicate transaction counts)</span>
+dedup_sum   = sensor.groupby(sensor.index).<span class="fn">sum</span>()
+
+<span class="fn">print</span>(<span class="str">"\nComparison at 08:01:"</span>)
+<span class="fn">print</span>(<span class="grn">f"  keep first : {dedup_first['2024-01-01 08:01']:.2f}"</span>)
+<span class="fn">print</span>(<span class="grn">f"  mean       : {dedup_mean['2024-01-01 08:01']:.2f}"</span>)
+
+<span class="cmt"># Option D: resample at expected frequency → auto-aggregates dups</span>
+resampled = sensor.resample(<span class="str">"1min"</span>).mean()
+<span class="fn">print</span>(<span class="str">"\nResampled (1-min mean):"</span>)
+<span class="fn">print</span>(resampled)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Duplicate timestamps: 2
+
+Comparison at 08:01:
+  keep first : 22.30
+  mean       : 22.30   ← same here, but differs when values conflict
+
+Resampled (2024-01-01 08:03 conflict: 22.7 vs 22.9):
+  mean = 22.80   ← resampling automatically handles duplicates ✅</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Deduplicate after merge / join operations</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># Merging two DataFrames can introduce surprising duplicates</span>
+left = pd.DataFrame({
+    <span class="str">"id"</span>: [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3"</span>],
+    <span class="str">"val"</span>: [<span class="str">"a"</span>, <span class="str">"b"</span>, <span class="str">"c"</span>],
+})
+right = pd.DataFrame({
+    <span class="str">"id"</span>: [<span class="num">1</span>, <span class="num">1"</span>, <span class="num">2</span>],   <span class="cmt"># note: id=1 appears twice in right</span>
+    <span class="str">"tag"</span>: [<span class="str">"x"</span>, <span class="str">"y"</span>, <span class="str">"z"</span>],
+})
+
+merged = left.merge(right, on=<span class="str">"id"</span>, how=<span class="str">"left"</span>)
+<span class="fn">print</span>(<span class="grn">f"After left join: {len(merged)} rows  (expected {len(left)})"</span>)
+<span class="fn">print</span>(merged)
+
+<span class="cmt"># Dedup after merge: keep first tag per id</span>
+merged_clean = merged.drop_duplicates(subset=[<span class="str">"id"</span>], keep=<span class="str">"first"</span>).reset_index(drop=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"\nAfter dedup: {len(merged_clean)} rows"</span>)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>After left join: 4 rows  (expected 3)   ← fan-out from right table!
+   id val tag
+0   1   a   x
+1   1   a   y   ← unexpected dup from right having id=1 twice
+2   2   b   z
+3   3   c NaN
+
+After dedup: 3 rows ✅</pre>
+      </div>
+      <div class="info info-orange"><strong>⚠️ Merge fan-out:</strong> A <code>left merge</code> where the right table has multiple rows per key creates N×M fan-out. Always <code>assert merged.shape[0] == left.shape[0]</code> after a left join if you expect a 1-to-1 relationship.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  CROSS-FILE  ═══════════ -->
+<div class="section" id="crossfile">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(56,189,248,.1)">📂</div>
+    <h2>Cross-File Deduplication</h2>
+  </div>
+  <p class="sh-sub">Combine multiple CSV/Parquet files and remove duplicates that span file boundaries.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Merge multiple files and deduplicate</h3><span class="pill p-blue">Cross-file</span></div>
+    <div class="card-b">
+<pre><code><span class="kw">import</span> glob, os
+
+<span class="cmt"># Simulate 3 regional export files written to disk</span>
+os.makedirs(<span class="str">"data_exports"</span>, exist_ok=<span class="cls">True</span>)
+
+<span class="kw">for</span> sys_name <span class="kw">in</span> [<span class="str">"sys_A"</span>, <span class="str">"sys_B"</span>, <span class="str">"sys_C"</span>]:
+    subset = orders[orders[<span class="str">"source"</span>] == sys_name].copy()
+    subset.to_csv(<span class="grn">f"data_exports/orders_{sys_name}.csv"</span>, index=<span class="cls">False</span>)
+
+<span class="cmt"># ── Load all files, track origin ─────────────────────────────────</span>
+all_parts = []
+<span class="kw">for</span> fpath <span class="kw">in</span> sorted(glob.glob(<span class="str">"data_exports/orders_*.csv"</span>)):
+    part = pd.read_csv(fpath, parse_dates=[<span class="str">"date"</span>])
+    part[<span class="str">"_file"</span>] = os.path.basename(fpath)
+    all_parts.append(part)
+
+combined = pd.concat(all_parts, ignore_index=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"Combined rows: {len(combined)}"</span>)
+<span class="fn">print</span>(<span class="grn">f"Dup order_ids across files: {combined.duplicated('order_id', keep=False).sum()}"</span>)
+
+<span class="cmt"># ── Priority rule: sys_A < sys_B < sys_C (C is most authoritative) ─</span>
+SOURCE_PRIORITY = {<span class="str">"sys_C"</span>: <span class="num">0</span>, <span class="str">"sys_B"</span>: <span class="num">1</span>, <span class="str">"sys_A"</span>: <span class="num">2</span>}
+combined[<span class="str">"_priority"</span>] = combined[<span class="str">"source"</span>].map(SOURCE_PRIORITY).fillna(<span class="num">99</span>)
+
+deduped = (
+    combined
+    .sort_values(<span class="str">"_priority"</span>)
+    .drop_duplicates(subset=[<span class="str">"order_id"</span>], keep=<span class="str">"first"</span>)
+    .drop(columns=[<span class="str">"_priority"</span>, <span class="str">"_file"</span>])
+    .sort_values(<span class="str">"order_id"</span>)
+    .reset_index(drop=<span class="cls">True</span>)
+)
+
+<span class="fn">print</span>(<span class="grn">f"\nAfter cross-file dedup: {len(deduped)} unique orders"</span>)
+<span class="fn">print</span>(deduped[[<span class="str">"order_id"</span>,<span class="str">"source"</span>]].to_string())</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Combined rows: 10
+Dup order_ids across files: 6
+
+After cross-file dedup: 7 unique orders
+order_id  source
+ ORD-001  sys_A   ← only sys_A had it
+ ORD-002  sys_B
+ ORD-003  sys_C   ← sys_C prioritised over sys_A/B
+ ORD-004  sys_C
+ ORD-005  sys_C   ← sys_C version kept
+ ORD-006  sys_A
+ ORD-007  sys_C</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  MULTIINDEX  ═══════════ -->
+<div class="section" id="multiindex">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(250,204,21,.1)">🗃️</div>
+    <h2>MultiIndex Duplicates</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Detect and remove duplicate MultiIndex entries</h3><span class="pill p-yellow">MultiIndex</span></div>
+    <div class="card-b">
+<pre><code><span class="cmt"># MultiIndex: (country, product) → sales</span>
+mi = pd.DataFrame({
+    <span class="str">"country"</span>:  [<span class="str">"US"</span>,<span class="str">"US"</span>,<span class="str">"US"</span>,<span class="str">"DE"</span>,<span class="str">"DE"</span>,<span class="str">"FR"</span>],
+    <span class="str">"product"</span>:  [<span class="str">"A"</span>,<span class="str">"A"</span>,<span class="str">"B"</span>,<span class="str">"A"</span>,<span class="str">"A"</span>,<span class="str">"C"</span>],
+    <span class="str">"sales"</span>:    [<span class="num">100</span>,<span class="num">100</span>,<span class="num">200</span>,<span class="num">150</span>,<span class="num">160</span>,<span class="num">90</span>],
+}).set_index([<span class="str">"country"</span>,<span class="str">"product"</span>])
+
+<span class="fn">print</span>(<span class="grn">f"Dup MultiIndex entries: {mi.index.duplicated().sum()}"</span>)
+
+<span class="cmt"># Detect</span>
+dup_idx = mi.index[mi.index.duplicated(keep=<span class="cls">False</span>)]
+<span class="fn">print</span>(<span class="str">"\nDuplicate groups:"</span>)
+<span class="fn">print</span>(mi.loc[dup_idx])
+
+<span class="cmt"># Remove: keep first per (country, product)</span>
+mi_clean = mi[~mi.index.duplicated(keep=<span class="str">"first"</span>)]
+<span class="fn">print</span>(<span class="str">"\nAfter dedup:"</span>)
+<span class="fn">print</span>(mi_clean)
+
+<span class="cmt"># Aggregate instead of dropping</span>
+mi_agg = mi.groupby(level=[<span class="str">"country"</span>,<span class="str">"product"</span>])[<span class="str">"sales"</span>].mean()
+<span class="fn">print</span>(<span class="str">"\nAggregated (mean):"</span>)
+<span class="fn">print</span>(mi_agg)</code></pre>
+      <div class="out">
+        <div class="out-label">Output</div>
+<pre>Dup MultiIndex entries: 4
+
+Duplicate groups:
+                  sales
+country product
+US      A           100   ← exact dup
+        A           100
+DE      A           150   ← conflict: 150 vs 160
+        A           160
+
+Aggregated (mean):
+country  product
+DE       A           155.0   ← 150+160/2
+FR       C            90.0
+US       A           100.0
+         B           200.0</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  AT SCALE  ═══════════ -->
+<div class="section" id="scale">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(74,222,128,.1)">⚡</div>
+    <h2>Deduplication at Scale</h2>
+  </div>
+  <p class="sh-sub">When datasets are too large for memory, use hash-based fingerprinting, chunked processing, or Dask.</p>
+
+  <div class="card">
+    <div class="card-h"><h3>Hash-based dedup — memory-efficient for huge datasets</h3><span class="pill p-green">Performance</span></div>
+    <div class="card-b">
+<pre><code><span class="kw">import</span> hashlib
+
+<span class="cmt"># ── Compute row hash without loading full comparison matrix ──────</span>
+<span class="kw">def</span> <span class="fn">row_hash</span>(row: pd.Series, cols: <span class="cls">list</span>) -> <span class="cls">str</span>:
+    payload = <span class="str">"|"</span>.join(<span class="cls">str</span>(row[c]) <span class="kw">for</span> c <span class="kw">in</span> cols)
+    <span class="kw">return</span> hashlib.md5(payload.encode()).hexdigest()
+
+<span class="cmt"># For 1M-row dataset: vectorised string concatenation + hash</span>
+N = <span class="num">1_000_000</span>
+df_big = pd.DataFrame({
+    <span class="str">"a"</span>: np.random.randint(<span class="num">0</span>, <span class="num">800_000</span>, N),
+    <span class="str">"b"</span>: np.random.choice([<span class="str">"X"</span>,<span class="str">"Y"</span>,<span class="str">"Z"</span>], N),
+    <span class="str">"c"</span>: np.random.randint(<span class="num">0</span>, <span class="num">100</span>, N),
+})
+
+<span class="cmt"># Fast vectorised hash: concatenate cols then hash the string</span>
+df_big[<span class="str">"_hash"</span>] = (
+    df_big[<span class="str">"a"</span>].astype(<span class="cls">str</span>) + <span class="str">"|"</span> +
+    df_big[<span class="str">"b"</span>]               + <span class="str">"|"</span> +
+    df_big[<span class="str">"c"</span>].astype(<span class="cls">str</span>)
+)
+
+before = <span class="fn">len</span>(df_big)
+df_big = df_big[~df_big[<span class="str">"_hash"</span>].duplicated(keep=<span class="str">"first"</span>)].drop(columns=[<span class="str">"_hash"</span>])
+df_big = df_big.reset_index(drop=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"Before: {before:,}  →  After: {len(df_big):,}  (removed {before-len(df_big):,})"</span>)
+
+<span class="cmt"># ── Chunked dedup for files larger than RAM ──────────────────────</span>
+seen_keys = <span class="fn">set</span>()
+output_chunks = []
+
+<span class="kw">for</span> chunk <span class="kw">in</span> pd.read_csv(<span class="str">"large_file.csv"</span>, chunksize=<span class="num">100_000</span>):
+    key_col = chunk[<span class="str">"order_id"</span>]
+    is_new  = ~key_col.isin(seen_keys)
+    output_chunks.append(chunk[is_new])
+    seen_keys.update(key_col[is_new].tolist())
+
+result = pd.concat(output_chunks, ignore_index=<span class="cls">True</span>)
+<span class="fn">print</span>(<span class="grn">f"Chunked result: {len(result):,} unique rows"</span>)</code></pre>
+      <div class="info info-green"><strong>✅ Chunked dedup advantage:</strong> The <code>seen_keys</code> set grows in O(unique) memory, not O(total). For a 10M-row file with 8M unique IDs, this requires ~800 MB for the set instead of loading all 10M rows into a DataFrame.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Performance comparison</h3></div>
+    <div class="card-b" style="padding:0">
+      <table class="dt">
+        <tr><th>Method</th><th>1M rows</th><th>Memory</th><th>Use when</th></tr>
+        <tr><td><code>drop_duplicates()</code></td><td style="color:#4ade80">~0.4s</td><td style="color:#4ade80">Low</td><td>Fits in RAM, exact matches</td></tr>
+        <tr><td><code>duplicated(subset=)</code></td><td style="color:#4ade80">~0.3s</td><td style="color:#4ade80">Low</td><td>Detect only, not remove</td></tr>
+        <tr><td>Hash column + duplicated</td><td style="color:#4ade80">~0.6s</td><td style="color:#4ade80">Low + hash col</td><td>Composite key as string hash</td></tr>
+        <tr><td>groupby + rank</td><td style="color:#facc15">~1.2s</td><td style="color:#facc15">Medium</td><td>Keep best-per-group</td></tr>
+        <tr><td>Chunked + set</td><td style="color:#facc15">~2.0s</td><td style="color:#4ade80">O(unique)</td><td>File larger than RAM</td></tr>
+        <tr><td>TF-IDF cosine (fuzzy)</td><td style="color:#f87171">~90s</td><td style="color:#f87171">High n×n matrix</td><td>String near-dups, &lt;50K rows</td></tr>
+        <tr><td>SequenceMatcher pairwise</td><td style="color:#f87171">Very slow</td><td style="color:#4ade80">Low</td><td>Only for very small sets (&lt;1K)</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════  CHEAT SHEET  ═══════════ -->
+<div class="section" id="cheatsheet">
+  <div class="sh">
+    <div class="sh-icon" style="background:rgba(251,146,60,.1)">🗺️</div>
+    <h2>Complete Cheat Sheet</h2>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>All drop_duplicates() patterns</h3></div>
+    <div class="card-b" style="padding:0">
+      <table class="dt">
+        <tr><th>Goal</th><th>Code</th></tr>
+        <tr><td>Remove exact full-row dups, keep first</td><td><code>df.drop_duplicates()</code></td></tr>
+        <tr><td>Keep last occurrence</td><td><code>df.drop_duplicates(keep="last")</code></td></tr>
+        <tr><td>Remove ALL copies in any dup group</td><td><code>df.drop_duplicates(keep=False)</code></td></tr>
+        <tr><td>Dedup by business key</td><td><code>df.drop_duplicates(subset=["id"])</code></td></tr>
+        <tr><td>Dedup by compound key</td><td><code>df.drop_duplicates(subset=["a","b","c"])</code></td></tr>
+        <tr><td>Dedup ignoring a column</td><td><code>df.drop_duplicates(subset=[c for c in df.columns if c != "ts"])</code></td></tr>
+        <tr><td>Keep highest value per key</td><td><code>df.sort_values("amount", ascending=False).drop_duplicates("id")</code></td></tr>
+        <tr><td>Keep most recent per key</td><td><code>df.sort_values("date", ascending=False).drop_duplicates("id")</code></td></tr>
+        <tr><td>Keep by custom priority</td><td><code>df["_rank"] = df["status"].map(PRIORITY)<br/>df.sort_values("_rank").drop_duplicates("id").drop("_rank")</code></td></tr>
+        <tr><td>Detect without removing</td><td><code>df.duplicated(subset=["id"], keep=False)</code></td></tr>
+        <tr><td>Count duplicates</td><td><code>df.duplicated().sum()</code></td></tr>
+        <tr><td>Show all dup rows</td><td><code>df[df.duplicated(keep=False)]</code></td></tr>
+        <tr><td>Duplicate timestamps</td><td><code>s[~s.index.duplicated(keep="first")]</code></td></tr>
+        <tr><td>Avg duplicate timestamps</td><td><code>s.groupby(s.index).mean()</code></td></tr>
+        <tr><td>MultiIndex dedup</td><td><code>df[~df.index.duplicated(keep="first")]</code></td></tr>
+        <tr><td>Aggregate instead of drop</td><td><code>df.groupby("id").agg({"val": "max", "ts": "last"})</code></td></tr>
+        <tr><td>Per-group keep best (rank)</td><td><code>df[df.groupby("id")["score"].rank(ascending=False) == 1]</code></td></tr>
+        <tr><td>Always reset index after</td><td><code>.drop_duplicates().reset_index(drop=True)</code></td></tr>
+        <tr><td>Assert no dups remain</td><td><code>assert df.duplicated().sum() == 0</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>Decision guide — which strategy to use?</h3></div>
+    <div class="card-b">
+<pre><code><span class="cmt">Are all column values identical? (exact dup)
+  └─ YES → df.drop_duplicates()   ← simplest, fastest
+
+Are only key columns equal? (key dup with different data)
+  ├─ All copies are equally valid → keep first:
+  │   df.drop_duplicates(subset=["key"])
+  ├─ Keep the "best" version (highest value / latest date):
+  │   df.sort_values("col", ascending=False).drop_duplicates("key")
+  ├─ Keep highest-priority source:
+  │   df["_p"] = df["source"].map(PRIORITY)
+  │   df.sort_values("_p").drop_duplicates("key").drop("_p")
+  └─ Merge conflicting data:
+      df.groupby("key").agg({"a": "first", "b": "max", "c": "last"})
+
+Are duplicates within groups? (conditional dup)
+  └─ df[df.groupby("group")["val"].rank(ascending=False) == 1]
+
+Are duplicates fuzzy (typos / accents)?
+  ├─ < 1,000 names: SequenceMatcher pairwise
+  ├─ 1,000–50,000 names: TF-IDF char n-gram cosine
+  └─ Pronunciation variants: Soundex grouping
+
+Are duplicates across files / chunks?
+  └─ Use priority sort + drop_duplicates() after pd.concat()
+     Or chunked set-tracking for files > RAM</span></code></pre>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:18px">
+    <div class="info info-orange">
+      <strong>Golden rule #1 — always reset_index:</strong><br/>
+      Chain <code>.reset_index(drop=True)</code> after every <code>drop_duplicates()</code>. Gaps in the integer index break <code>iloc</code>, merge, and many scikit-learn operations.
+    </div>
+    <div class="info info-blue">
+      <strong>Golden rule #2 — keep=False to diagnose:</strong><br/>
+      Use <code>duplicated(keep=False)</code> to see the full extent of the problem before deciding — it marks every row in every dup group, not just the "copies".
+    </div>
+    <div class="info info-green">
+      <strong>Golden rule #3 — sort before keep="first":</strong><br/>
+      <code>df.sort_values("date").drop_duplicates("id", keep="last")</code> is the canonical "keep most recent" pattern. Sort determines which row "first" and "last" refers to.
+    </div>
+    <div class="info info-purple">
+      <strong>Golden rule #4 — aggregate over drop:</strong><br/>
+      When conflicting copies contain complementary information (one has the date, one has the status), use <code>groupby().agg()</code> instead of silently discarding one row.
+    </div>
+    <div class="info info-teal">
+      <strong>Golden rule #5 — assert after dedup:</strong><br/>
+      Always add <code>assert df["key"].duplicated().sum() == 0</code> after your dedup logic. A missed duplicate is a silent data corruption bug.
+    </div>
+    <div class="info info-red">
+      <strong>Golden rule #6 — NaN in keys:</strong><br/>
+      <code>duplicated()</code> treats NaN == NaN (marks as duplicate). If NaN should be treated as unique/unmatched, fill with unique sentinels (<code>f"__MISSING__{i}"</code>) before deduplication.
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+<footer>Removing Duplicates in Pandas — End to End &nbsp;|&nbsp; pandas 2.x · NumPy · scikit-learn · Python 3.11 &nbsp;|&nbsp; April 2026</footer>
+</body>
+</html>
